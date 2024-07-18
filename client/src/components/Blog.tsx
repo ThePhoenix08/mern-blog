@@ -6,4 +6,5 @@ function Blog({}: Props) {
   return <div>Blog</div>;
 }
 
+
 export default Blog;

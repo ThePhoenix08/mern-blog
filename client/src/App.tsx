@@ -14,11 +14,12 @@ function App() {
   // Replace with actual logic to determine privilege level: AUTHORISATION
 
   return (
-    <div className="App h-screen w-screen grid place-items-center">
+    <div className="App h-screen w-screen grid place-items-center text-5xl">
       <Routes>
-        <Route index element={<Home />} />
+        <Route index element={<Home renderedAs="index" />} />
 
-        <Route path="app" element={<Home />}>
+        <Route path="app" element={<Home renderedAs="component" />}>
+          {/* privileged routes: authenticated only */}
           {routesConfig[userPrivilegeLevel].map((route, index) => (
             <Route
               key={index}
@@ -26,15 +27,17 @@ function App() {
               element={<route.component />}
             />
           ))}
-          <Route path="login" element={<Login />} />
-          <Route path="signup" element={<SignUp />} />
-          <Route path="recovery" element={<ForgotPassword />} />
           <Route path="*" element={<PageNotFound />} />
         </Route>
+        {/* public routes */}
+        <Route path="login" element={<Login />} />
+        <Route path="signup" element={<SignUp />} />
+        <Route path="recovery" element={<ForgotPassword />} />
+        <Route path="*" element={<PageNotFound />} />
       </Routes>
     </div>
   );
 }
 
-export default App;
 
+export default App;
