@@ -15,6 +15,7 @@ const ENV_VARIABLES = {
   port: process.env.PORT || 3000,
   mongoUri: process.env.MONGO_URI || "mongodb://localhost:27017/your-app",
   corsOrigin: process.env.CORS_ORIGIN,
+  nodeEnv: process.env.NODE_ENV || "development",
 
   // jwt
   accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
@@ -30,6 +31,10 @@ const ENV_VARIABLES = {
   jsonLimit: "16kb", // express.json
   saltRounds: 10, // bcrypt
   fileUploadSizeLimit: 1 * 1024 * 1024,
+  rateLimit: 100, // Limit each IP to 100 requests per windowMs
+  rateLimitDuration: 15 * 60 * 1000, // 15 minutes
+  loginLimit: 5, // Limit each IP to 5 login requests per hour
+  loginLimitDuration: 60 * 60 * 1000, // 1 hour
 };
 
 export default ENV_VARIABLES;

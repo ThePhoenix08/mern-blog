@@ -10,9 +10,7 @@ interface AuthRequest extends Request {
       _id: unknown;
     }>;
   files?:
-    | {
-        [fieldname: string]: Express.Multer.File[];
-      }
+    | Record<string, Express.Multer.File[]>
     | Express.Multer.File[]
     | undefined;
 }

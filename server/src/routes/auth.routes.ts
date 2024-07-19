@@ -1,23 +1,37 @@
 import { Router } from "express";
-import {
-  handleForgetPassword,
-  handleResetPassword,
-  loginUser,
-  registerUser,
-  handleRefreshUser,
-  logoutUser,
-} from "../controllers/auth.controller";
-import authMiddleware from "../middlewares/auth.middleware";
+import * as authController from "../controllers/auth.controller";
 import upload from "../middlewares/multer.middleware";
+import { authenticate, authoriseRole } from "middlewares/auth.middleware";
 
 const authRouter = Router();
-authRouter.route("/register").post(upload.none(), registerUser);
-authRouter.route("/login").post(upload.none(), loginUser);
-authRouter.route("/forgetPassword").post(upload.none(), handleForgetPassword);
-authRouter.route("/refreshUser").post(handleRefreshUser);
+
+authRouter
+  .route("/register")
+  .post(upload.none(), authController.registerUser);
+
+authRouter
+  .route("/login")
+  .post(upload.none(), authController.loginUser);
+
+authRouter
+  .route("/forgetPassword")
+  .post(upload.none(), authController.handleForgetPassword);
+
+authRouter
+  .route("/refreshUser")
+  .post(authController.handleRefreshUser);
+
 authRouter
   .route("/resetPassword")
-  .post(authMiddleware("user"), upload.none(), handleResetPassword);
-authRouter.route("/logout").post(authMiddleware("user"), logoutUser);
+  .post(
+    authenticate,
+    authoriseRole("user"),
+    upload.none(),
+    authController.handleResetPassword
+  );
+
+authRouter
+  .route("/logout")
+  .post(authenticate, authoriseRole("user"), authController.logoutUser);
 
 export default authRouter;

@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 import User, { IUser } from "./user.model";
 const id = mongoose.Types.ObjectId;
 
-interface IBlogger extends IUser {
+export interface IBlogger extends IUser {
   blogsByMe: (typeof id)[];
   totalSubscribers: number;
   socialLinks: {
