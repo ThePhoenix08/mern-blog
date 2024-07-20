@@ -1,11 +1,10 @@
-import e, { Response } from "express";
+import { Response } from "express";
 import Blog from "models/blog.model";
 import Comment from "models/comment.model";
 import Report from "models/report.model";
 import AuthRequest from "types/express";
 import { updateBloggerSchema } from "validators/blogger.validator";
 import { updateProfileSchema } from "validators/user.validator";
-import { ZodSchema } from "zod";
 import Blogger, { IBlogger } from "../models/blogger.model";
 import User, { IUser } from "../models/user.model";
 import ApiError from "../utils/ApiError.util";
@@ -170,6 +169,7 @@ export const deleteAccount = asyncHandler(
   }
 );
 
+/** List all users, (Admin only) */
 export const getUsers = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     /* steps

@@ -44,6 +44,14 @@ userRouter.route('/')
 
 export default userRouter;
 
+/* 
+// admin routes
+userRouter.route('/:id')
+  .get(authenticate, authoriseRole("admin"), userController.getProfile)
+  .patch(authenticate, authoriseRole("admin"), userController.updateProfile) 
+  .delete(authenticate, authoriseRole("admin"), userController.deleteAccount);
+*/
+
 /*
 userRouter.route("/notifications")
 .get(authenticate, userController.getNotifications)
