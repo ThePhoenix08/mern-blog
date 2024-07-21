@@ -34,6 +34,44 @@ setupRoutes(
   ])
 );
 
+userRouter
+  .route("/:userId")
+  .get(
+    authenticate,
+    authoriseRole("user"),
+    userController.getUserPublicProfile
+  );
+
+userRouter
+  .route("/avatar")
+  .post(
+    authenticate,
+    authoriseRole("user"),
+    upload.single("avatar"),
+    userController.updateAvatar
+  );
+
+userRouter
+  .route("/cover")
+  .post(
+    authenticate,
+    authoriseRole("user"),
+    upload.single("coverImage"),
+    userController.updateCoverImage
+  );
+
+userRouter
+  .route("/subscribe/:bloggerId")
+  .post(
+    authenticate,
+    authoriseRole("user"),
+    userController.ToggleSubscribeToBlogger
+  );
+
+userRouter
+  .route("/myComments")
+  .post(authenticate, authoriseRole("user"), userController.getUserComments);
+
 // admin routes
 userRouter.route('/')
 .get(

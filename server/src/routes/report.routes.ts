@@ -7,9 +7,4 @@ reportRouter
   .route("/new")
   .post(authenticate, authoriseRole("user"), reportController.createReport);
 
-reportRouter
-  .route("/list")
-  .get(authenticate, authoriseRole("admin"), reportController.getReports)
-  .delete(authenticate, authoriseRole("admin"), reportController.deleteReports);
-
 export default reportRouter;

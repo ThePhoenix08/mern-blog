@@ -12,4 +12,12 @@ commentRouter
   .put(authenticate, authoriseRole("user"), commentController.updateComment)
   .delete(authenticate, authoriseRole("user"), commentController.deleteComment);
 
+commentRouter
+  .route("/:blogId/like")
+  .post(
+    authenticate,
+    authoriseRole("user"),
+    commentController.toggleCommentLike
+  );
+
 export default commentRouter;

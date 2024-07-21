@@ -34,4 +34,8 @@ authRouter
   .route("/logout")
   .post(authenticate, authoriseRole("user"), authController.logoutUser);
 
+authRouter
+  .route("/verifyEmail")
+  .post(upload.none(), authController.verifyUserEmail);
+
 export default authRouter;
