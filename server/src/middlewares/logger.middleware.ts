@@ -1,5 +1,7 @@
 import winston from "winston";
 import ENV_VARIABLES from "../constants";
+import { Request, Response, NextFunction } from "express";
+import DailyRotateFile from "winston-daily-rotate-file";
 
 const logger = winston.createLogger({
   level: ENV_VARIABLES.nodeEnv === "production" ? "info" : "debug",
@@ -11,14 +13,19 @@ const logger = winston.createLogger({
   ),
   defaultMeta: { service: "blog-api" },
   transports: [
-    new winston.transports.File({ filename: "logs/error.log", level: "error" }),
-    new winston.transports.File({ filename: "logs/combined.log" }),
+    new winston.transports.DailyRotateFile({
+      filename: "logs/%DATE%.error.log",
+      level: "error",
+    }),
+    new winston.transports.DailyRotateFile({
+      filename: "logs/%DATE%.combined.log",
+    }),
   ],
 });
 
 if (ENV_VARIABLES.nodeEnv !== "production") {
   logger.add(
-    new winston.transports.Console({
+    new winston.transports.DailyRotateFile({
       format: winston.format.combine(
         winston.format.colorize(),
         winston.format.simple()
@@ -27,4 +34,13 @@ if (ENV_VARIABLES.nodeEnv !== "production") {
   );
 }
 
-export default logger;
+const requestLogger = (req: Request, res: Response, next: NextFunction) => {
+  logger.info(`${req.method} ${req.url}`, {
+    headers: req.headers,
+    query: req.query,
+    body: req.body,
+  });
+  next();
+};
+
+export { requestLogger, logger };

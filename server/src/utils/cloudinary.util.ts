@@ -2,6 +2,7 @@ import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import ENV_VARIABLES from "../constants";
 import ApiError from "./ApiError.util";
+import { logger } from "middlewares/logger.middleware";
 
 // Configuration
 cloudinary.config({
@@ -24,8 +25,15 @@ const uploadOnCloud = async (localFilePath: string, identifier: string) => {
     return uploadResult;
   } catch (error: any) {
     fs.unlinkSync(localFilePath); // remove the local file
-    console.error(`⚠️ Error: ${error.message}`);
-    return null;
+    logger.error(
+      `⚠️ Error while uploading ${identifier} on Cloudinary: ${error.message}`
+    );
+    throw new ApiError({
+      statusCode: 500,
+      message: "Error while uploading on Cloudinary",
+      errorType: "FileUploadError",
+      stack: error.stack,
+    });
   }
 };
 
@@ -54,7 +62,11 @@ export const deleteOldUpload = async (oldUploadUrl: string): Promise<void> => {
     resource_type: "image",
   });
   if (res.result != "ok")
-    throw new ApiError(500, "Cloudinary delete operation failed!");
+    throw new ApiError({
+      statusCode: 500,
+      message: "Cloudinary delete operation failed!",
+      errorType: "FileDeleteError",
+    });
 };
 
 /* (async function() {

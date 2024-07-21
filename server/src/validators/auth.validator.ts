@@ -24,6 +24,10 @@ const loginSchema = z
     path: ["username", "email"],
   });
 
+const emailVerificationSchema = z.object({
+  token: z.string().min(1, "Verification token is required"),
+});
+
 const forgetPasswordSchema = z.object({
   username: z.string().min(3, "Username must be atleast 3 chars"),
   email: z.string().email("Email is invalid"),
@@ -35,21 +39,10 @@ const resetPasswordSchema = z.object({
   oldPassword: z.string().regex(passwordRegex, passwordInvalidMsg),
 });
 
-/* const blogCreationSchema = z.object({
-  title: z.string().min(1, "Blog Title is required"),
-  content: z.string().min(1, "Blog Content is required"),
-  slug: z.string().min(1, "Blog slug is required"),
-  tags: z.array(z.string()),
-  banner: z.string().url().optional(),
-  images: z.array(z.string().url()).optional(),
-  links: z.array(z.string().url()).optional(),
-  isPublished: z.boolean(),
-});
-
-const commentCreationSchema = z.object({
-  content: z.string().min(1, "Comment must have content"),
-  author: z.string().min(1, "Author is required"),
-  blog: z.string().min(1, "Blog is required"),
-}); */
-
-export { registerSchema, loginSchema, forgetPasswordSchema, resetPasswordSchema };
+export {
+  emailVerificationSchema,
+  registerSchema,
+  loginSchema,
+  forgetPasswordSchema,
+  resetPasswordSchema,
+};

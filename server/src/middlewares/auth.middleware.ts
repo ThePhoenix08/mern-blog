@@ -25,6 +25,16 @@ export const authenticate = asyncHandler(
         ENV_VARIABLES.accessTokenSecret as string
       ) as jwt.JwtPayload;
 
+      if (
+        !(
+          decodedToken &&
+          decodedToken.exp &&
+          Date.now() >= decodedToken.exp * 1000
+        )
+      ) {
+        throw new ApiError(401, "Token has expired");
+      }
+
       const user = await User.findById(decodedToken._id).select(
         "-password -refreshToken"
       );

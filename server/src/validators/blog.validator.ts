@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { deleteManySchema, idSchema, paginationSchema } from "./common.validator";
 
 const blogSchema = z.object({
   title: z.string().min(1).max(200),
@@ -13,10 +14,8 @@ const blogSchema = z.object({
 });
 
 const getBlogsSchema = z.object({
-  options: z
-    .object({
-      page: z.number().min(1).max(100).default(1),
-      limit: z.number().min(1).max(100).default(10),
+  options: paginationSchema
+    .extend({
       sort: z
         .object({
           field: z.enum(["createdAt", "updatedAt", "title", "views", "likes"]),
@@ -46,14 +45,10 @@ const createBlogSchema = blogSchema;
 
 const updateBlogSchema = blogSchema.partial();
 
-const idSchema = z.object({
-  id: z.string().refine((val) => /^[0-9a-fA-F]{24}$/.test(val), {
-    message: "Invalid ObjectId format",
-  }),
-});
+const deleteBlogsSchema = deleteManySchema;
 
-const deleteBlogsSchema = z.object({
-  ids: z.array(idSchema.shape.id).min(1).max(100),
+const uploadManyImagesSchema = z.object({
+  files: z.array(z.instanceof(File)),
 });
 
 export {
@@ -62,4 +57,5 @@ export {
   updateBlogSchema,
   idSchema,
   deleteBlogsSchema,
+  uploadManyImagesSchema,
 };

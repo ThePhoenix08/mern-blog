@@ -2,20 +2,30 @@ class ApiError extends Error {
   statusCode: number;
   data: any;
   success: boolean;
-  errors: any[];
+  errors?: any[];
+  errorType?: string;
 
-  constructor(
-    statusCode: number,
+  constructor({
+    statusCode,
     message = "Something went wrong",
-    data: any = null,
-    errors = [],
-    stack = ""
-  ) {
+    data = null,
+    errorType,
+    errors,
+    stack,
+  }: {
+    statusCode: number;
+    message?: string;
+    data?: any;
+    errorType?: string;
+    errors?: any[];
+    stack?: string;
+  }) {
     super(message);
     this.statusCode = statusCode;
     this.success = false;
     this.errors = errors;
     this.message = message;
+    this.errorType = errorType;
 
     // Handle different types of data
     if (data) {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { idSchema } from "./blog.validator";
 
 const updateProfileSchema = z.object({
   username: z
@@ -22,4 +23,17 @@ const updateProfileSchema = z.object({
     .optional(),
 });
 
-export { updateProfileSchema };
+const ToggleSubscribeToBloggerSchema = z.object({
+  bloggerId: idSchema.shape.id,
+  subscribe: z.boolean(),
+});
+
+const uploadImageSchema = z.object({
+  file: z.instanceof(File),
+});
+
+export {
+  updateProfileSchema,
+  ToggleSubscribeToBloggerSchema,
+  uploadImageSchema,
+};

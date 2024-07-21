@@ -27,17 +27,17 @@ app.use(cookieParser()); // middleware to handle cookies
 app.use(compression()); // middleware to compress objects - improves performance
 app.use(express.static("public")); // middleware to serve few static files
 app.use(apiLimiter); // middleware to limit API calls
-app.use(loginLimiter); // middleware to limit login attempts
 app.use(errorHandler); // middleware to handle errors
 app.use(notFoundHandler); // middleware to handle 404 errors
+app.use(requestLogger); // middleware to log requests
 
 // router imports
-import adminRouter from "./routes/admin.routes";
 import authRouter from "./routes/auth.routes";
 import blogRouter from "./routes/blog.routes";
 import commentRouter from "./routes/comment.routes";
 import reportRouter from "./routes/report.routes";
 import userRouter from "./routes/user.routes";
+import { requestLogger } from "middlewares/logger.middleware";
 
 // applying routers
 app.use("/api/v1/auth", authRouter);
@@ -45,6 +45,5 @@ app.use("/api/v1/user", userRouter);
 app.use("/api/v1/blog", blogRouter);
 app.use("/api/v1/comment", commentRouter);
 app.use("/api/v1/report", reportRouter);
-app.use("/api/v1/admin", adminRouter);
 
 export default app;
