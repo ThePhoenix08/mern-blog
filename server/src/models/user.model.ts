@@ -17,6 +17,14 @@ export interface IUser extends Document {
   refreshToken: string;
   bio: string;
   avatar?: string;
+  isEmailVerified: boolean;
+  emailVerificationToken?: string;
+  userSettings?: {
+    emailNotifications: boolean;
+    darkMode: boolean;
+    language: string;
+  };
+
   isPasswordCorrect(argPassword: string): Promise<boolean>;
   generateAccessToken(): Promise<string>;
   generateRefreshToken(): Promise<string>;
@@ -55,6 +63,13 @@ const userSchema: Schema<IUser> = new Schema(
     subscribedTo: [{ type: id, ref: "User" }],
     commentsByMe: [{ type: id, ref: "Comment" }],
     refreshToken: { type: String },
+    isEmailVerified: { type: Boolean, default: false },
+    emailVerificationToken: { type: String },
+    userSettings: {
+      emailNotifications: { type: Boolean, default: false },
+      darkMode: { type: Boolean, default: false },
+      language: { type: String, default: "en" },
+    },
   },
   { timestamps: true }
 );

@@ -14,6 +14,11 @@ const ReportSchema = new Schema(
     reportedBy: { type: id, ref: "User", required: true },
     target: { type: id, required: true },
     targetType: { type: String, enum: ["blog", "comment"], required: true },
+    status: {
+      type: String,
+      enum: ["pending", "resolved", "dismissed"],
+      default: "pending",
+    },
   },
   { timestamps: true }
 );

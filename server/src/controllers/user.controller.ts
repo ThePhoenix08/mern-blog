@@ -10,7 +10,6 @@ import User, { IUser } from "../models/user.model";
 import ApiError from "../utils/ApiError.util";
 import ApiResponse from "../utils/ApiResponse.util";
 import asyncHandler from "../utils/asyncHandler.util";
-import { deleteOldUpload, handleFileUpload } from "../utils/cloudinary.util";
 import { omit } from "../utils/utilFunctions.util";
 
 export const getProfile = asyncHandler(
@@ -20,67 +19,57 @@ export const getProfile = asyncHandler(
         ? await Blogger.findById(req.user?._id)
         : await User.findById(req.user?._id);
 
-    if (!user) throw new ApiError(404, `${req.user?.role} not found`);
+    if (!user)
+      throw new ApiError({
+        statusCode: 404,
+        message: `${req.user?.role} not found`,
+        errorType: "UserNotFoundError",
+      });
 
     const returnUser: Object = omit(user.toObject(), [
       "refreshToken",
       "password",
     ]);
 
-    res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          returnUser,
-          `${req.user?.role} fetched successfully.`
-        )
-      );
+    res.status(200).json(
+      new ApiResponse({
+        statusCode: 200,
+        data: returnUser,
+        message: `${req.user?.role} fetched successfully.`,
+      })
+    );
   }
 );
+
+export const getProfile = asyncHandler(async(req: AuthRequest, res: Response) => {
+  
+}
 
 export const updateProfile = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     // 1. get role
-    if (!req.user) throw new ApiError(400, "Unauthenticated Request");
+    if (!req.user)
+      throw new ApiError({
+        errorType: "AuthenticationError",
+        message: "Authentication failed",
+      });
     const isBlogger = req.user.role === "blogger";
 
     // 2: zod validation
     const updateSchema = isBlogger ? updateBloggerSchema : updateProfileSchema;
     const result = updateSchema.safeParse(req.body);
-    if (!result.success) throw new ApiError(400, "", result.error);
+    if (!result.success)
+      throw new ApiError({
+        errorType: "ValidationError",
+        message: "Validation failed",
+        errors: result.error.issues,
+      });
 
     // 3: get model
     const user = isBlogger
       ? await Blogger.findById(req.user?._id)
       : await User.findById(req.user?._id);
     if (!user) throw new ApiError(404, `${req.user?.role} not found`);
-
-    // utility interface and function for uplaoding files
-    interface IFile {
-      identifier: string;
-      path: string;
-      url?: string;
-      old_url?: string;
-    }
-
-    const uploadFiles = async (files: IFile[]): Promise<IFile[]> => {
-      for (const file of files) {
-        const uploadedFile = await handleFileUpload(file.path, file.identifier);
-        if (!uploadedFile)
-          throw new ApiError(
-            500,
-            `Error while uploading ${file.identifier} on cloudinary.`
-          );
-        file.url = uploadedFile;
-
-        const oldFileUrl = file.old_url;
-        if (typeof oldFileUrl === "string") {
-          await deleteOldUpload(oldFileUrl);
-        }
-      }
-      return files;
-    };
 
     // 4: upload files
     let files: IFile[] = [];

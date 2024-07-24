@@ -29,7 +29,6 @@ const uploadOnCloud = async (localFilePath: string, identifier: string) => {
       `⚠️ Error while uploading ${identifier} on Cloudinary: ${error.message}`
     );
     throw new ApiError({
-      statusCode: 500,
       message: "Error while uploading on Cloudinary",
       errorType: "FileUploadError",
       stack: error.stack,

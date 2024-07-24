@@ -12,6 +12,7 @@ import {
   updateBlogSchema,
 } from "validators/blog.validator";
 import User from "models/user.model";
+import { formSearchQuery } from "services/blog.service";
 
 const getBlogs = asyncHandler(async (req: AuthRequest, res: Response) => {
   /* steps
@@ -31,38 +32,11 @@ const getBlogs = asyncHandler(async (req: AuthRequest, res: Response) => {
     throw new ApiError(400, "Validation Error: Invalid request body");
   const { options } = result.data;
 
-  const query: Record<string, any> = {}; // mongoose query
   const sort: Record<string, any> = { createdAt: -1 }; // mongoose sort
 
-  if (options?.filters) {
-    // populating query filters
-    const { isPublished, tags, blogger, slug, date } = options.filters;
-
-    if (isPublished) query.isPublished = isPublished;
-
-    if (tags) query.tags = { $in: tags };
-
-    if (blogger) {
-      const bloggerUser = await User.findOne({ username: blogger });
-      if (bloggerUser) query.blogger = bloggerUser._id;
-    }
-
-    if (slug) query.slug = slug;
-
-    if (date) {
-      query.createdAt = {};
-      if (date.startDate) query.createdAt.$gte = date.startDate;
-      if (date.endDate) query.createdAt.$lte = date.endDate;
-    }
-
-    if (options?.searchTerm) {
-      query.$or = [
-        { title: { $regex: options.searchTerm, $options: "i" } },
-        { content: { $regex: options.searchTerm, $options: "i" } },
-        { tags: { $regex: options.searchTerm, $options: "i" } },
-        { slug: { $regex: options.searchTerm, $options: "i" } },
-      ];
-    }
+  // formSearchQuery
+  if(options && options.filters)
+  const query: Record<string, any> = formSearchQuery(options as Record<string, any>);
 
     if (options?.sort) {
       sort[options.sort.field] = options.sort.order === "asc" ? 1 : -1;
