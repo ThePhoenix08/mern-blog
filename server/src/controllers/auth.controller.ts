@@ -1,26 +1,4 @@
 import { Request, Response } from "express";
-import asyncHandler from "../utils/asyncHandler.util";
-import jwt from "jsonwebtoken";
-import {
-  forgetPasswordSchema,
-  loginSchema,
-  registerSchema,
-  resetPasswordSchema,
-} from "../validators/auth.validator";
-import User, { IUser } from "../models/user.model";
-import ApiError from "../utils/ApiError.util";
-import ApiResponse from "../utils/ApiResponse.util";
-import ENV_VARIABLES from "../constants";
-import AuthRequest from "types/express";
-import {
-  createNewDocument,
-  getDocumentById,
-  getDocumentByQuery,
-  getDocumentsByQuery,
-  getUserFromRequest,
-  updateDocumentById,
-  validateZodSchema,
-} from "services/common.service";
 import {
   checkIfPasswordIsCorrect,
   checkIfUserExists,
@@ -28,7 +6,26 @@ import {
   validateRefreshToken,
   validateRequest,
 } from "services/auth.service";
+import {
+  createNewDocument,
+  getDocumentById,
+  getDocumentByQuery,
+  getUserFromRequest,
+  updateDocumentById,
+  validateZodSchema,
+} from "services/common.service";
+import AuthRequest from "types/express";
 import { omit } from "utils/utilFunctions.util";
+import { IUser } from "../models/user.model";
+import ApiError from "../utils/ApiError.util";
+import ApiResponse from "../utils/ApiResponse.util";
+import asyncHandler from "../utils/asyncHandler.util";
+import {
+  forgetPasswordSchema,
+  loginSchema,
+  registerSchema,
+  resetPasswordSchema,
+} from "../validators/auth.validator";
 
 // BOOKMARK => using { sameSite: true }
 const options: {
@@ -237,10 +234,10 @@ const logoutUser = asyncHandler(async (req: AuthRequest, res: Response) => {
 // TODO => add email verification
 
 export {
-  registerUser,
-  loginUser,
   handleForgetPassword,
-  handleResetPassword,
   handleRefreshUser,
+  handleResetPassword,
+  loginUser,
   logoutUser,
+  registerUser,
 };

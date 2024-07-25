@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
-import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
+// import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 const id = mongoose.Types.ObjectId;
 
 interface IBlog extends Document {
@@ -38,7 +38,7 @@ const BlogSchema: Schema = new Schema(
   { timestamps: true }
 );
 
-BlogSchema.plugin(mongooseAggregatePaginate);
+// BlogSchema.plugin(mongooseAggregatePaginate);
 
 const Blog = mongoose.model<IBlog>("Blog", BlogSchema);
 export default Blog;

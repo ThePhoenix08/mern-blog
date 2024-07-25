@@ -1,6 +1,6 @@
 import ApiError from "utils/ApiError.util";
 import { deleteOldUpload, handleFileUpload } from "utils/cloudinary.util";
-import { ZodSchema } from "zod";
+import { ZodSchema, ZodType } from "zod";
 
 import User, { IUser } from "models/user.model";
 import Blog from "models/blog.model";
@@ -11,11 +11,11 @@ import Notif from "models/notif.model";
 import { Model, Document, FilterQuery, UpdateQuery } from "mongoose";
 import AuthRequest from "types/express";
 
-interface IFile {
+export interface IFile {
   identifier: string;
   path: string;
   url?: string;
-  old_url?: string;
+  old_url: string | null;
 }
 
 interface IPaginatedResult<T> {
@@ -46,7 +46,7 @@ class ValidationError extends ApiError {
   }
 }
 
-const validateZodSchema = <T>(schema: ZodSchema<T>, data: unknown): T => {
+const validateZodSchema = <T>(schema: ZodType<T>, data: unknown): T => {
   const result = schema.safeParse(data);
   if (!result.success) throw new ValidationError("Zod Validation failed");
   return result.data;
@@ -159,7 +159,7 @@ const getPaginatedDocumentsByQuery = async <T extends Document>(
     model.countDocuments(query).lean(),
   ]);
 
-  if (!documents || !total || total === 0)
+  if (!documents || !total)
     throw new ApiError({
       errorType: "DocumentNotFoundError",
       message: `Error while fetching documents for model ${modelName}`,
@@ -175,7 +175,7 @@ const getPaginatedDocumentsByQuery = async <T extends Document>(
 const deleteDocumentsByQuery = async <T extends Document>(
   modelName: ModelName,
   query: FilterQuery<T>
-): Promise<{ deletedDocumentsCount: number }> => {
+): Promise<number> => {
   const model = modelNameToModel[modelName];
   const deletedDocuments = await model.deleteMany(query).lean();
 
@@ -185,7 +185,7 @@ const deleteDocumentsByQuery = async <T extends Document>(
       message: `Error while deleting documents for model ${modelName}`,
     });
 
-  return { deletedDocumentsCount: deletedDocuments.deletedCount || 0 };
+  return deletedDocuments.deletedCount || 0;
 };
 
 const deleteDocumentById = async <T extends Document>(

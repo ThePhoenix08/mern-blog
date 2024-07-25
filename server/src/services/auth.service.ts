@@ -1,21 +1,21 @@
-import ENV_VARIABLES from "../constants";
+import jwt from "jsonwebtoken";
 import User, { IUser } from "models/user.model";
-import jwt, { Jwt } from "jsonwebtoken";
-import ApiError from "utils/ApiError.util";
 import AuthRequest from "types/express";
+import ApiError from "utils/ApiError.util";
+import ENV_VARIABLES from "../constants";
 
 const checkIfUserExists = async (
   username: string,
   email: string,
   errorCheck: boolean = true
-): Promise<IUser | undefined> => {
+): Promise<IUser> => {
   const user = await User.findOne({ $or: [{ email }, { username }] }).lean();
   if (errorCheck && !user)
     throw new ApiError({
       errorType: "UserNotFoundError",
       message: "User not found",
     });
-  return user as IUser | undefined;
+  return user as IUser;
 };
 
 const checkIfUserIsVerified = async (email: string): Promise<void> => {
@@ -97,9 +97,9 @@ const validateRefreshToken = async (
 };
 
 export {
+  checkIfPasswordIsCorrect,
   checkIfUserExists,
   checkIfUserIsVerified,
-  checkIfPasswordIsCorrect,
   validateRefreshToken,
   validateRequest,
 };

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { idSchema } from "./blog.validator";
+import { updateSettingsSchema } from "./settings.validator";
 
 const updateProfileSchema = z.object({
   username: z
@@ -21,6 +22,7 @@ const updateProfileSchema = z.object({
       linkedin: z.string().url().optional(),
     })
     .optional(),
+  userSettings: updateSettingsSchema.optional(),
 });
 
 const ToggleSubscribeToBloggerSchema = z.object({

@@ -11,7 +11,7 @@ export interface IUser extends Document {
   fullname: string;
   password: string;
   role: "user" | "blogger" | "admin";
-  favorites: (typeof id)[];
+  savedBlogs: (typeof id)[];
   subscribedTo: (typeof id)[];
   commentsByMe: (typeof id)[];
   refreshToken: string;
@@ -19,10 +19,16 @@ export interface IUser extends Document {
   avatar?: string;
   isEmailVerified: boolean;
   emailVerificationToken?: string;
-  userSettings?: {
+  userSettings: {
     emailNotifications: boolean;
     darkMode: boolean;
     language: string;
+    publiclyVisibleInfo: {
+      email: boolean;
+      fullname: boolean;
+      savedBlogs: boolean;
+      subscribedTo: boolean;
+    };
   };
 
   isPasswordCorrect(argPassword: string): Promise<boolean>;
@@ -59,7 +65,7 @@ const userSchema: Schema<IUser> = new Schema(
     avatar: { type: String },
     bio: { type: String, default: "Hey, I am on Bloggy" },
 
-    favorites: [{ type: id, ref: "Blog" }],
+    savedBlogs: [{ type: id, ref: "Blog" }],
     subscribedTo: [{ type: id, ref: "User" }],
     commentsByMe: [{ type: id, ref: "Comment" }],
     refreshToken: { type: String },
@@ -69,6 +75,12 @@ const userSchema: Schema<IUser> = new Schema(
       emailNotifications: { type: Boolean, default: false },
       darkMode: { type: Boolean, default: false },
       language: { type: String, default: "en" },
+      publiclyVisibleInfo: {
+        email: { type: Boolean, default: false },
+        fullname: { type: Boolean, default: false },
+        savedBlogs: { type: Boolean, default: false },
+        subscribedTo: { type: Boolean, default: false },
+      },
     },
   },
   { timestamps: true }
