@@ -1,9 +1,9 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document, Model, Types } from "mongoose";
 import User, { IUser } from "./user.model";
-const id = mongoose.Types.ObjectId;
+const id = Types.ObjectId;
 
 export interface IBlogger extends IUser {
-  blogsByMe: (typeof id)[];
+  blogsByMe: Types.ObjectId[];
   totalSubscribers: number;
   socialLinks: {
     facebook?: string;
@@ -21,8 +21,15 @@ const bloggerSchema: Schema<IBlogger> = new Schema({
     twitter: { type: String, default: "" },
     linkedin: { type: String, default: "" },
   },
-  blogsByMe: [{ type: id, ref: "Blog" }],
 });
+
+bloggerSchema.virtual('blogsByMe', {
+  ref: 'Blog',
+  localField: '_id',
+  foreignField: 'blogger'
+});
+
+
 
 const Blogger: Model<IBlogger> = User.discriminator<IBlogger>(
   "Blogger",

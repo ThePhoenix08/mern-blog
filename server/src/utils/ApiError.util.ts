@@ -32,6 +32,7 @@ class ApiError extends Error {
     InvalidRefreshTokenError: "Invalid refresh token",
     RequestUndefinedError: "Request undefined",
     UnauthorizedRequestError: "Unauthorized request",
+    UpdateError: "Error while updating document",
   };
 
   constructor({

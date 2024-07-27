@@ -8,7 +8,7 @@ import Blogger from "models/blogger.model";
 import Comment from "models/comment.model";
 import Report from "models/report.model";
 import Notif from "models/notif.model";
-import { Model, Document, FilterQuery, UpdateQuery } from "mongoose";
+import { Model, Document, FilterQuery, UpdateQuery, Types } from "mongoose";
 import AuthRequest from "types/express";
 
 export interface IFile {
@@ -36,7 +36,7 @@ const modelNameToModel: Record<ModelName, Model<any>> = {
   notif: Notif,
 };
 
-class ValidationError extends ApiError {
+export class ValidationError extends ApiError {
   constructor(message: string) {
     super({
       message,
@@ -224,6 +224,30 @@ const updateDocumentById = async <T extends Document>(
   return document as T;
 };
 
+/** <ModelType>(modelName, query) => orphanedDocs */
+const orphanDocumentsOfModel = async <T extends Document>(
+  modelName: ModelName,
+  query: FilterQuery<T>
+) => {
+  const model = modelNameToModel[modelName] as Model<T>;
+  const orphanedDocuments = await model.updateMany(query, {
+    $set: {
+      orphaning: {
+        orphanedAt: Date.now(),
+        isOrphaned: true,
+      },
+    },
+  });
+
+  if (!orphanedDocuments)
+    throw new ApiError({
+      errorType: "DocumentNotFoundError",
+      message: `Error while orphaning documents for model ${modelName}`,
+    });
+
+  return orphanedDocuments.modifiedCount || 0;
+};
+
 const createNewDocument = async <T extends Document>(
   modelName: ModelName,
   data: Object,
@@ -239,6 +263,21 @@ const createNewDocument = async <T extends Document>(
   return document as T;
 };
 
+const checkIfDocumentsExist = async <T extends Document>(
+  modelName: ModelName,
+  ids?: string[],
+  givenQuery?: FilterQuery<T>
+) => {
+  const query: Record<string, any> = givenQuery || { _id: { $in: ids } };
+  const documentsExists = await getDocumentsByQuery<T>(modelName, query);
+  if (!documentsExists)
+    throw new ApiError({
+      errorType: "DocumentNotFoundError",
+      message: `Error while validating document ids for model ${modelName}`,
+    });
+  return documentsExists as T[];
+};
+
 export {
   validateZodSchema,
   uploadFiles,
@@ -251,4 +290,6 @@ export {
   updateDocumentById,
   createNewDocument,
   getUserFromRequest,
+  orphanDocumentsOfModel,
+  checkIfDocumentsExist,
 };

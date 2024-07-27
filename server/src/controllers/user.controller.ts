@@ -1,14 +1,13 @@
 import { Response } from "express";
-import Blog from "models/blog.model";
-import Comment, { IComment } from "models/comment.model";
-import Report from "models/report.model";
+import { IBlogger } from "models/blogger.model";
+import { IComment } from "models/comment.model";
 import {
   deleteDocumentById,
   deleteDocumentsByQuery,
   getDocumentById,
-  getDocumentsByQuery,
   getPaginatedDocumentsByQuery,
   getUserFromRequest,
+  orphanDocumentsOfModel,
   updateDocumentById,
   validateZodSchema,
 } from "services/common.service";
@@ -19,14 +18,16 @@ import {
   UserWithOptionalBloggerFields,
 } from "services/user.service";
 import AuthRequest from "types/express";
+import { paginationSchema } from "validators/common.validator";
 import { updateProfileSchema } from "validators/user.validator";
-import User, { IUser } from "../models/user.model";
+import { IUser } from "../models/user.model";
 import ApiError from "../utils/ApiError.util";
 import ApiResponse from "../utils/ApiResponse.util";
 import asyncHandler from "../utils/asyncHandler.util";
 import { omit } from "../utils/utilFunctions.util";
-import { IBlogger } from "models/blogger.model";
-import { paginationSchema } from "validators/common.validator";
+import { IReport } from "models/report.model";
+import { INotif } from "models/notif.model";
+import { IBlog } from "models/blog.model";
 
 export const getProfile = asyncHandler(
   async (req: AuthRequest, res: Response) => {
@@ -116,19 +117,20 @@ export const deleteAccount = asyncHandler(
     );
     const deletedUser = await deleteDocumentById("user", user._id as string);
 
-    const deletedComments = await deleteDocumentsByQuery("comment", {
+    const deletedComments = await orphanDocumentsOfModel<IComment>("comment", {
       author: user._id as string,
     });
-    const deletedReports = await deleteDocumentsByQuery("report", {
+    const deletedReports = await orphanDocumentsOfModel<IReport>("report", {
       reportedBy: user._id as string,
+      relatedDocs: { user: user._id as string },
     });
-    const deletedNotifs = await deleteDocumentsByQuery("notif", {
+    const deletedNotifs = await orphanDocumentsOfModel<INotif>("notif", {
       user: user._id as string,
     });
 
     let deletedBlogs = 0;
     if (fullUser.role === "blogger") {
-      deletedBlogs = await deleteDocumentsByQuery("blog", {
+      deletedBlogs = await orphanDocumentsOfModel<IBlog>("blog", {
         author: user._id as string,
       });
     }
@@ -303,7 +305,9 @@ export const getUserComments = asyncHandler(async (req, res) => {
   // 4. Return success response with user's comments
 
   const user = await getUserFromRequest(req);
-  const { page, limit } = validateZodSchema(paginationSchema, req.body);
+  const data = validateZodSchema(paginationSchema, req.body);
+  const page = data.page || 1;
+  const limit = data.limit || 10;
 
   const {
     documents: comments,
@@ -312,17 +316,20 @@ export const getUserComments = asyncHandler(async (req, res) => {
   } = await getPaginatedDocumentsByQuery<IComment>(
     "comment",
     { author: user._id as string },
-    page || 1,
-    limit || 10
+    page,
+    limit
+  );
+
+  const returnedComments: Object[] = comments.map((comment) =>
+    comment.toObject()
   );
 
   res.status(200).json(
     new ApiResponse({
       statusCode: 200,
       data: {
-        comments,
-        total,
-        pages,
+        returnedComments,
+        pagination: { page, limit, total, pages },
       },
       message:
         total == 0

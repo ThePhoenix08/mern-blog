@@ -1,19 +1,27 @@
-import mongoose, { Schema, Document } from "mongoose";
-const id = mongoose.Types.ObjectId;
+import ENV_VARIABLES from "../constants";
+import mongoose, { Schema, Document, Types } from "mongoose";
+const id = Types.ObjectId;
 
 export interface IComment extends Document {
   content: string;
-  author: typeof id;
-  blog: typeof id;
-  likes: (typeof id)[];
+  author: Types.ObjectId;
+  blog: Types.ObjectId;
+  likes: Types.ObjectId[];
+  orphaning: {
+    orphanedAt: Date;
+    isOrphaned: boolean;
+  };
 }
 
-const CommentSchema: Schema = new Schema(
+const commentSchema: Schema = new Schema(
   {
     content: { type: String, required: true },
     author: { type: id, required: true, ref: "User" },
     blog: { type: id, required: true, ref: "Blog" },
-    likes: [{ type: id, ref: "User" }],
+    orphaning: {
+      orphanedAt: { type: Date, default: Date.now },
+      isOrphaned: { type: Boolean, default: false },
+    },
   },
   { timestamps: true }
 );
@@ -21,5 +29,16 @@ const CommentSchema: Schema = new Schema(
 // import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 // CommentSchema.plugin(mongooseAggregatePaginate);
 
-const Comment = mongoose.model<IComment>("Comment", CommentSchema);
+commentSchema.virtual("likes", {
+  ref: "User",
+  localField: "likedComments",
+  foreignField: "likes",
+});
+
+commentSchema.index(
+  { orphaning: 1 },
+  { expireAfterSeconds: ENV_VARIABLES.expireAfterOrphandedOthers }
+);
+
+const Comment = mongoose.model<IComment>("Comment", commentSchema);
 export default Comment;

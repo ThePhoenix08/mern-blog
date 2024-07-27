@@ -1,226 +1,246 @@
-import Blog from "models/blog.model";
 import { Response } from "express";
+import { IBlog } from "models/blog.model";
+import { IUser } from "models/user.model";
+import {
+  deleteBlogsByQuery,
+  formSearchQuery,
+  getBlogsByQuery,
+  getBlogTagsFromAllBlogs,
+  handleBlogImagesUpload,
+  incrementBlogViewCount,
+} from "services/blog.service";
+import {
+  createNewDocument,
+  getDocumentById,
+  getUserFromRequest,
+  updateDocumentById,
+  validateZodSchema,
+} from "services/common.service";
 import AuthRequest from "types/express";
 import ApiError from "utils/ApiError.util";
 import ApiResponse from "utils/ApiResponse.util";
 import asyncHandler from "utils/asyncHandler.util";
 import {
-  getBlogsSchema,
-  deleteBlogsSchema,
   createBlogSchema,
+  deleteBlogsSchema,
+  getBlogsSchema,
   idSchema,
   updateBlogSchema,
 } from "validators/blog.validator";
-import User from "models/user.model";
-import { formSearchQuery } from "services/blog.service";
 
 const getBlogs = asyncHandler(async (req: AuthRequest, res: Response) => {
-  /* steps
-    validate request body
-    get options
-    populate query with filters
-    populate sort with sort options
-    handle pagination
-    get blogs
-    get total count
-    convert blogs to object
-    return blogsObject and pagination details
-  */
+  const { options } = validateZodSchema(getBlogsSchema, req.body);
+  const { query, sort, skip, limit, page } = await formSearchQuery(
+    options as Record<string, any>
+  );
+  const { documents, total, pages } = await getBlogsByQuery(
+    query,
+    sort,
+    skip,
+    limit
+  );
 
-  const result = getBlogsSchema.safeParse(req.body);
-  if (!result.success)
-    throw new ApiError(400, "Validation Error: Invalid request body");
-  const { options } = result.data;
-
-  const sort: Record<string, any> = { createdAt: -1 }; // mongoose sort
-
-  // formSearchQuery
-  if(options && options.filters)
-  const query: Record<string, any> = formSearchQuery(options as Record<string, any>);
-
-    if (options?.sort) {
-      sort[options.sort.field] = options.sort.order === "asc" ? 1 : -1;
-    }
-
-    const page = options?.page || 1;
-    const limit = options?.limit || 10;
-    const skip = (page - 1) * limit;
-
-    const blogs = await Blog.find(query).sort(sort).skip(skip).limit(limit);
-
-    const total = await Blog.countDocuments(query);
-
-    const returnedBlogs: Object[] = blogs.map((blog) => blog.toObject());
-
-    res.status(200).json(
-      new ApiResponse(
-        200,
-        {
-          returnedBlogs,
-          pagination: {
-            page,
-            limit,
-            total,
-            pages: Math.ceil(total / limit),
-          },
-        },
-        "Blogs fetched successfully."
-      )
-    );
-  }
+  res.status(200).json(
+    new ApiResponse({
+      statusCode: 200,
+      data: {
+        returnedBlogs: documents,
+        pagination: { page, limit, total, pages },
+      },
+      message: "Blogs fetched successfully.",
+    })
+  );
 });
 
 const deleteBlogs = asyncHandler(async (req: AuthRequest, res: Response) => {
-  /* steps
-    validate request body
-    get userId and userRole
-    populate query
-    if userRole is blogger
-      filter blogs by userId
-    delete blogs
-    return success response
-  */
-
-  const result = deleteBlogsSchema.safeParse(req.body);
-  if (!result.success)
-    throw new ApiError(400, "Validation Error: Invalid request body");
-  const { ids } = result.data;
-
+  const { ids } = validateZodSchema(deleteBlogsSchema, req.body);
   if (!ids || !Array.isArray(ids) || ids.length === 0)
-    throw new ApiError(
-      400,
-      "Validation Error: Invalid ID format, No blogs to delete"
-    );
+    throw new ApiError({
+      errorType: "RequestUndefinedError",
+      message: "No blogs specified to delete",
+    });
 
-  if (!req.user) throw new ApiError(401, "Unauthorized: No user found");
-  const userId = req.user._id;
-  const userRole = req.user.role;
+  const user = await getUserFromRequest(req);
+  const role = user.role;
+  if (role === "user")
+    throw new ApiError({
+      errorType: "UnauthorizedRequestError",
+      message: "User attempted to delete blogs",
+    });
 
-  const query: Record<string, any> = { _id: { $in: ids } };
+  const deletedCount = await deleteBlogsByQuery(ids, role, user._id as string);
 
-  if (userRole === "blogger") {
-    query.blogger = userId;
-  }
-
-  const deletedBlogs = await Blog.deleteMany(query);
-  if (
-    !deletedBlogs ||
-    deletedBlogs.deletedCount === 0 ||
-    deletedBlogs.deletedCount !== ids.length
-  )
-    throw new ApiError(400, "Error while deleting blogs");
-
-  res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        { deletedCount: deletedBlogs.deletedCount },
-        "Blogs deleted successfully."
-      )
-    );
+  res.status(200).json(
+    new ApiResponse({
+      statusCode: 200,
+      data: {
+        deletedCount,
+      },
+      message: "Blogs deleted successfully.",
+    })
+  );
 });
 
 const createBlog = asyncHandler(async (req: AuthRequest, res: Response) => {
-  /* steps
-    validate request body
-    get userId
-    create blog
-    return success response
-  */
+  const blogData = validateZodSchema(createBlogSchema, req.body);
+  const blogImages = req.files ? req.files : null;
+  if (!blogData || !blogImages || !Array.isArray(blogImages))
+    throw new ApiError({
+      errorType: "RequestUndefinedError",
+      message: "Request undefined",
+    });
 
-  const result = createBlogSchema.safeParse(req.body);
-  if (!result.success)
-    throw new ApiError(400, "Validation Error: Invalid request body");
-  const blogData = result.data;
+  const user = await getUserFromRequest(req);
+  const role = user.role;
 
-  if (!req.user) throw new ApiError(401, "Unauthorized: No user found");
-  const userId = req.user._id;
+  if (role === "user")
+    throw new ApiError({
+      errorType: "UnauthorizedRequestError",
+      message: "Non Blogger user attempted to create blog",
+    });
 
-  const blog = Blog.create({ ...blogData, blogger: userId });
+  const blogImagesUrls = await handleBlogImagesUpload(blogImages);
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, blog, "Blog created successfully."));
+  const userId = user._id;
+  const blog = await createNewDocument<IBlog>("blog", {
+    ...blogData,
+    blogger: userId,
+    images: blogImagesUrls,
+  });
+
+  res.status(200).json(
+    new ApiResponse({
+      statusCode: 200,
+      data: blog,
+      message: "Blog created successfully.",
+    })
+  );
 });
 
 const getBlog = asyncHandler(async (req: AuthRequest, res: Response) => {
-  /* steps
-  validate request body
-  get blogId
-  get blog
-  return blog
-  */
+  const { id } = validateZodSchema(idSchema, req.params);
+  const blog = await getDocumentById<IBlog>("blog", id);
+  const updatedBlog = await incrementBlogViewCount(blog._id as string);
+  const returnBlog = updatedBlog.populate("blogger");
 
-  const result = idSchema.safeParse(req.params.id);
-  if (!result.success)
-    throw new ApiError(400, "Validation Error: Invalid request body");
-  const blogId = result.data.id;
-
-  const blog = await Blog.findById(blogId).populate("blogger");
-  if (!blog) throw new ApiError(404, "Blog not found");
-
-  res
-    .status(200)
-    .json(new ApiResponse(200, blog, "Blog fetched successfully."));
+  res.status(200).json(
+    new ApiResponse({
+      statusCode: 200,
+      data: returnBlog,
+      message: "Blog fetched successfully.",
+    })
+  );
 });
 
 const updateBlog = asyncHandler(async (req: AuthRequest, res: Response) => {
-  /* steps
-  validate request params - get id
-  validate request body - get update data
-  get userId
-  update blog
-  return success response
-  */
+  const data = validateZodSchema(updateBlogSchema, req.body);
+  const { id: blogId } = validateZodSchema(idSchema, req.params);
 
-  const result = idSchema.safeParse(req.params.id);
-  if (!result.success)
-    throw new ApiError(400, "Validation Error: Invalid request body");
-  const blogId = result.data.id;
+  const user = await getUserFromRequest(req);
+  const role = user.role;
 
-  const result2 = updateBlogSchema.safeParse(req.body);
-  if (!result2.success)
-    throw new ApiError(400, "Validation Error: Invalid request body");
-  const updateData = result2.data;
+  if (role === "user")
+    throw new ApiError({
+      errorType: "UnauthorizedRequestError",
+      message: "Non Blogger user attempted to update blog",
+    });
 
-  if (!req.user) throw new ApiError(401, "Unauthorized: No user found");
-  const userId = req.user._id;
+  const existingBlog = await getDocumentById<IBlog>("blog", blogId);
 
-  const blog = await Blog.findOneAndUpdate({ _id: blogId }, updateData, {
-    new: true,
-    runValidators: true,
-    context: "query",
-  });
-  if (!blog) throw new ApiError(404, "Blog not found");
+  if (existingBlog.blogger.toString() !== (user._id as string).toString())
+    throw new ApiError({
+      errorType: "UnauthorizedRequestError",
+      message: "Non Blogger user attempted to update blog",
+    });
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, blog, "Blog updated successfully."));
+  let newImagesUrls: string[] = [];
+  if (req.files && Array.isArray(req.files)) {
+    newImagesUrls = await handleBlogImagesUpload(
+      req.files as Express.Multer.File[]
+    );
+  }
+
+  const updateObject = {
+    ...data,
+    images: [...(existingBlog.images || []), ...newImagesUrls],
+  };
+
+  const updatedBlog = await updateDocumentById<IBlog>(
+    "blog",
+    blogId,
+    updateObject
+  );
+
+  res.status(200).json(
+    new ApiResponse({
+      statusCode: 200,
+      data: updatedBlog,
+      message: "Blog updated successfully.",
+    })
+  );
 });
 
 const deleteBlog = asyncHandler(async (req: AuthRequest, res: Response) => {
-  /* steps
-  validate request params - get id
-  get userId
-  delete blog
-  return success response
-  */
+  const { id: blogId } = validateZodSchema(idSchema, req.params);
+  const user = await getUserFromRequest(req);
+  const role = user.role;
 
-  const result = idSchema.safeParse(req.params.id);
-  if (!result.success)
-    throw new ApiError(400, "Validation Error: Invalid request body");
-  const blogId = result.data.id;
+  const result = await deleteBlogsByQuery([blogId], role, user._id as string);
+  if (!result || result === 1)
+    throw new ApiError({
+      errorType: "DeleteError",
+      message: "Error while deleting singleblog",
+    });
 
-  if (!req.user) throw new ApiError(401, "Unauthorized: No user found");
-  const userId = req.user._id;
-
-  const blog = await Blog.findOneAndDelete({ _id: blogId, blogger: userId });
-  if (!blog) throw new ApiError(404, "Blog not found");
-
-  res
-    .status(200)
-    .json(new ApiResponse(200, blog, "Blog deleted successfully."));
+  res.status(200).json(
+    new ApiResponse({
+      statusCode: 200,
+      message: "Blog deleted successfully.",
+    })
+  );
 });
 
-export { getBlog, getBlogs, deleteBlogs, deleteBlog, createBlog, updateBlog };
+const addBlogToSaved = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id: blogId } = validateZodSchema(idSchema, req.params);
+  const { _id: userId } = await getUserFromRequest(req);
+
+  const savedBlogUpdateUser = await updateDocumentById<IUser>(
+    "user",
+    userId as string,
+    {
+      $push: { savedBlogs: blogId },
+    }
+  );
+
+  res.status(200).json(
+    new ApiResponse({
+      statusCode: 200,
+      data: savedBlogUpdateUser,
+      message: "Blog added to saved successfully.",
+    })
+  );
+});
+
+const getBlogTags = asyncHandler(async (req: AuthRequest, res: Response) => {
+  // get distinct tags from all blog posts
+
+  const blogTags: string[] = await getBlogTagsFromAllBlogs();
+  res.status(200).json(
+    new ApiResponse({
+      statusCode: 200,
+      data: blogTags,
+      message: "Blog tags fetched successfully.",
+    })
+  );
+});
+
+export {
+  createBlog,
+  deleteBlog,
+  deleteBlogs,
+  getBlog,
+  getBlogs,
+  updateBlog,
+  addBlogToSaved,
+  getBlogTags,
+};

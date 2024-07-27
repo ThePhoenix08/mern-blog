@@ -35,6 +35,11 @@ const ENV_VARIABLES = {
   rateLimitDuration: 15 * 60 * 1000, // 15 minutes
   loginLimit: 5, // Limit each IP to 5 login requests per hour
   loginLimitDuration: 60 * 60 * 1000, // 1 hour
+  blogImagesLimit: 5, // multer
+
+  cronJobsInterval: "0 0 * * *", // Every day at midnight
+  expireAfterOrphandedBlogs: 86400 * 7, // 7 days
+  expireAfterOrphandedOthers: 86400, // 1 day
 };
 
 export default ENV_VARIABLES;

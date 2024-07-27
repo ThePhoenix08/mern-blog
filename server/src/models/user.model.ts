@@ -1,9 +1,9 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document, Model, Types } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import ENV_VARIABLES from "../constants";
 
-const id = mongoose.Types.ObjectId;
+const id = Types.ObjectId;
 
 export interface IUser extends Document {
   username: string;
@@ -11,9 +11,9 @@ export interface IUser extends Document {
   fullname: string;
   password: string;
   role: "user" | "blogger" | "admin";
-  savedBlogs: (typeof id)[];
-  subscribedTo: (typeof id)[];
-  commentsByMe: (typeof id)[];
+  savedBlogs: Types.ObjectId[];
+  subscribedTo: Types.ObjectId[];
+  commentsByMe: Types.ObjectId[];
   refreshToken: string;
   bio: string;
   avatar?: string;
@@ -65,9 +65,8 @@ const userSchema: Schema<IUser> = new Schema(
     avatar: { type: String },
     bio: { type: String, default: "Hey, I am on Bloggy" },
 
-    savedBlogs: [{ type: id, ref: "Blog" }],
     subscribedTo: [{ type: id, ref: "User" }],
-    commentsByMe: [{ type: id, ref: "Comment" }],
+    // commentsByMe: [{ type: id, ref: "Comment" }], virtual field
     refreshToken: { type: String },
     isEmailVerified: { type: Boolean, default: false },
     emailVerificationToken: { type: String },
@@ -85,6 +84,18 @@ const userSchema: Schema<IUser> = new Schema(
   },
   { timestamps: true }
 );
+
+userSchema.virtual("savedBlogs", {
+  ref: "Blog",
+  localField: "_id",
+  foreignField: "savedBy",
+});
+
+userSchema.virtual("commentsByMe", {
+  ref: "Comment",
+  localField: "_id",
+  foreignField: "author",
+});
 
 // middleware hooks
 userSchema.pre<IUser>("save", async function (next) {

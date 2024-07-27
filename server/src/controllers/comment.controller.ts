@@ -1,5 +1,19 @@
 import { Response } from "express";
-import Comment from "models/comment.model";
+import { IBlog } from "models/blog.model";
+import Comment, { IComment } from "models/comment.model";
+import { INotif } from "models/notif.model";
+import { IReport } from "models/report.model";
+import {
+  validateZodSchema,
+  getDocumentsByQuery,
+  getPaginatedDocumentsByQuery,
+  ValidationError,
+  createNewDocument,
+  getUserFromRequest,
+  updateDocumentById,
+  deleteDocumentsByQuery,
+  orphanDocumentsOfModel,
+} from "services/common.service";
 import AuthRequest from "types/express";
 import ApiError from "utils/ApiError.util";
 import ApiResponse from "utils/ApiResponse.util";
@@ -9,135 +23,141 @@ import {
   addCommentSchema,
   updateCommentSchema,
 } from "validators/comment.validator";
+import { paginationSchema } from "validators/common.validator";
 
 const getComments = asyncHandler(async (req: AuthRequest, res: Response) => {
-  /* steps
-  validate request params - blogId
-  get comments
-  return comments
-  */
+  const { id: blogId } = validateZodSchema(idSchema, req.params);
+  const data = validateZodSchema(paginationSchema, req.query);
 
-  const result = idSchema.safeParse(req.params.blogId);
-  if (!result.success)
-    throw new ApiError(400, "Validation Error: Invalid request body");
-  const blogId = result.data.id;
+  if (!data)
+    throw new ValidationError("Validation Error: Invalid request body");
 
-  const comments = await Comment.find({ blog: blogId });
-  if (!comments) throw new ApiError(404, "No comments found");
+  if (!data.page || !data.limit)
+    throw new ApiError({
+      errorType: "RequestUndefinedError",
+      message: "Unsufficient request data",
+    });
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, comments, "Comments fetched successfully."));
+  const page = data.page || 1;
+  const limit = data.limit || 10;
+  const {
+    documents: comments,
+    total,
+    pages,
+  } = await getPaginatedDocumentsByQuery<IComment>(
+    "comment",
+    { blog: blogId },
+    page,
+    limit
+  );
+
+  res.status(200).json(
+    new ApiResponse({
+      statusCode: 200,
+      data: {
+        returnedComments: comments,
+        pagination: { page, limit, total, pages },
+      },
+      message: "Comments fetched successfully.",
+    })
+  );
 });
 
 const addComment = asyncHandler(async (req: AuthRequest, res: Response) => {
-  /* steps
-  validate request params - get postId
-  get blogId
-  validate request body
-  get userId
-  create comment
-  return success response
-  */
+  const { id: blogId } = validateZodSchema(idSchema, req.params);
+  const data = validateZodSchema(addCommentSchema, req.body);
+  const { _id: userId } = await getUserFromRequest(req);
 
-  const result1 = idSchema.safeParse(req.params.blogId);
-  if (!result1.success)
-    throw new ApiError(400, "Validation Error: Invalid request body");
-  const blogId = result1.data.id;
-
-  const result2 = addCommentSchema.safeParse(req.body);
-  if (!result2.success)
-    throw new ApiError(400, "Validation Error: Invalid request body");
-  const commentData = result2.data;
-
-  if (!req.user) throw new ApiError(401, "Unauthorized: No user found");
-  const userId = req.user._id;
-
-  const comment = Comment.create({
-    ...commentData,
+  const comment = await createNewDocument<IComment>("comment", {
+    ...data,
     author: userId,
     blog: blogId,
   });
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, comment, "Comment created successfully."));
+  await updateDocumentById<IBlog>("blog", blogId, {
+    totalComments: { $inc: 1 },
+    comments: { $push: comment._id },
+  });
+
+  res.status(200).json(
+    new ApiResponse({
+      statusCode: 200,
+      data: comment,
+      message: "Comment created successfully.",
+    })
+  );
 });
 
 const updateComment = asyncHandler(async (req: AuthRequest, res: Response) => {
-  /* steps
-  validate request params - get id
-  validate request body - get update data
-  get userId
-  update comment
-  return success response
-  */
+  const { id: commentId } = validateZodSchema(idSchema, req.params);
+  const data = validateZodSchema(updateCommentSchema, req.body);
+  const { _id: userId, role } = await getUserFromRequest(req);
 
-  const result1 = idSchema.safeParse(req.params.commentId);
-  if (!result1.success)
-    throw new ApiError(400, "Validation Error: Invalid request body");
-  const commentId = result1.data.id;
-
-  const result2 = idSchema.safeParse(req.params.blogId);
-  if (!result2.success)
-    throw new ApiError(400, "Validation Error: Invalid request body");
-  const blogId = result2.data.id;
-
-  const result3 = updateCommentSchema.safeParse(req.body);
-  if (!result3.success)
-    throw new ApiError(400, "Validation Error: Invalid request body");
-  const updateData = result3.data;
-
-  if (!req.user) throw new ApiError(401, "Unauthorized: No user found");
-  const userId = req.user._id;
-
-  const comment = await Comment.findOneAndUpdate(
-    { _id: commentId, author: userId, blog: blogId },
-    updateData,
-    {
-      new: true,
-      runValidators: true,
-      context: "query",
-    }
+  const comment = await updateDocumentById<IComment>(
+    "comment",
+    commentId,
+    data
   );
-  if (!comment) throw new ApiError(404, "Comment not found");
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, comment, "Comment updated successfully."));
+  res.status(200).json(
+    new ApiResponse({
+      statusCode: 200,
+      data: comment,
+      message: "Comment updated successfully.",
+    })
+  );
 });
 
 const deleteComment = asyncHandler(async (req: AuthRequest, res: Response) => {
-  /* steps
-  validate request params - get id
-  get userId
-  delete comment
-  return success response
-  */
+  const { id: commentId } = validateZodSchema(idSchema, req.params);
+  const { id: blogId } = validateZodSchema(idSchema, req.params);
+  const { _id: userId } = await getUserFromRequest(req);
 
-  const result = idSchema.safeParse(req.params.commentId);
-  if (!result.success)
-    throw new ApiError(400, "Validation Error: Invalid request body");
-  const commentId = result.data.id;
-
-  const result2 = idSchema.safeParse(req.params.blogId);
-  if (!result2.success)
-    throw new ApiError(400, "Validation Error: Invalid request body");
-  const blogId = result2.data.id;
-
-  if (!req.user) throw new ApiError(401, "Unauthorized: No user found");
-  const userId = req.user._id;
-
-  const comment = await Comment.findOneAndDelete({
+  await deleteDocumentsByQuery<IComment>("comment", {
     _id: commentId,
     author: userId,
     blog: blogId,
   });
-  if (!comment) throw new ApiError(404, "Comment not found");
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, comment, "Comment deleted successfully."));
+  await orphanDocumentsOfModel<IReport>("report", {
+    relatedDocs: { comment: commentId },
+  });
+
+  await orphanDocumentsOfModel<INotif>("notif", {
+    relatedItem: { comment: commentId },
+  });
+
+  res.status(200).json(
+    new ApiResponse({
+      statusCode: 200,
+      message: "Comment deleted successfully.",
+    })
+  );
 });
 
-export { getComments, addComment, updateComment, deleteComment };
+const toggleCommentLike = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { id: commentId } = validateZodSchema(idSchema, req.params);
+    const { _id: userId } = await getUserFromRequest(req);
+
+    const comment = await updateDocumentById<IComment>("comment", commentId, {
+      $push: { likes: userId },
+    });
+
+    res.status(200).json(
+      new ApiResponse({
+        statusCode: 200,
+        data: comment,
+        message: "Comment liked successfully.",
+      })
+    );
+  }
+);
+
+export {
+  getComments,
+  addComment,
+  updateComment,
+  deleteComment,
+  toggleCommentLike,
+};

@@ -13,7 +13,7 @@ commentRouter
   .delete(authenticate, authoriseRole("user"), commentController.deleteComment);
 
 commentRouter
-  .route("/:blogId/like")
+  .route("/:blogId/:commentId")
   .post(
     authenticate,
     authoriseRole("user"),
