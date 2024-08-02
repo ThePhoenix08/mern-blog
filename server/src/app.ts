@@ -38,6 +38,7 @@ import commentRouter from "./routes/comment.routes";
 import reportRouter from "./routes/report.routes";
 import userRouter from "./routes/user.routes";
 import { requestLogger } from "middlewares/logger.middleware";
+import dashboardRouter from "routes/dashboard.routes";
 
 // applying routers
 app.use("/api/v1/auth", authRouter);
@@ -45,5 +46,6 @@ app.use("/api/v1/user", userRouter);
 app.use("/api/v1/blog", blogRouter);
 app.use("/api/v1/comment", commentRouter);
 app.use("/api/v1/report", reportRouter);
+app.use("/api/v1/dashboard", dashboardRouter);
 
 export default app;

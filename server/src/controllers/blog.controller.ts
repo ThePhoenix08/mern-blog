@@ -25,6 +25,7 @@ import {
   deleteBlogsSchema,
   getBlogsSchema,
   idSchema,
+  toggleBlogSaveSchema,
   updateBlogSchema,
 } from "validators/blog.validator";
 
@@ -200,23 +201,26 @@ const deleteBlog = asyncHandler(async (req: AuthRequest, res: Response) => {
   );
 });
 
-const addBlogToSaved = asyncHandler(async (req: AuthRequest, res: Response) => {
+const toggleBlogSave = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id: blogId } = validateZodSchema(idSchema, req.params);
   const { _id: userId } = await getUserFromRequest(req);
+  const { isSaved } = validateZodSchema(toggleBlogSaveSchema, req.body);
+
+  const updateQuery = isSaved
+    ? { $push: { savedBlogs: blogId } }
+    : { $pull: { savedBlogs: blogId } };
 
   const savedBlogUpdateUser = await updateDocumentById<IUser>(
     "user",
     userId as string,
-    {
-      $push: { savedBlogs: blogId },
-    }
+    updateQuery
   );
 
   res.status(200).json(
     new ApiResponse({
       statusCode: 200,
       data: savedBlogUpdateUser,
-      message: "Blog added to saved successfully.",
+      message: `Blog ${isSaved ? "added to saved" : "removed from saved"} successfully.`,
     })
   );
 });
@@ -241,6 +245,6 @@ export {
   getBlog,
   getBlogs,
   updateBlog,
-  addBlogToSaved,
+  toggleBlogSave,
   getBlogTags,
 };

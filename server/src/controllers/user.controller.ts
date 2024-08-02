@@ -261,7 +261,7 @@ export const uploadCoverImage = asyncHandler(async (req, res) => {
 });
 
 /** /subscribe/:bloggerId POST -> ToggleSubscribeToBlogger */
-const toggleSubscribeToBlogger = asyncHandler(async (req, res) => {
+export const toggleSubscribeToBlogger = asyncHandler(async (req, res) => {
   // 1. Get bloggerId from request params
   // 2. Get user id from authenticated request
   // 3. Toggle subscription status in database

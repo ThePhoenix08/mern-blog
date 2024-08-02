@@ -4,6 +4,7 @@ import ENV_VARIABLES from "../constants";
 const id = Types.ObjectId;
 
 export interface IBlog extends Document {
+  adminStatus: "approved" | "rejected" | "flagged" | "pending";
   title: string;
   content: string; //markdown
   slug: string;
@@ -12,9 +13,6 @@ export interface IBlog extends Document {
   images?: string[];
   links?: string[];
   blogger: Types.ObjectId;
-  totalSaves: number;
-  totalComments: number;
-  totalLikes: number;
   views: number;
   isPublished: boolean;
   comments: Types.ObjectId[];
@@ -37,20 +35,22 @@ const BlogSchema: Schema = new Schema(
     links: [String],
     blogger: { type: id, required: true, ref: "User" },
     isPublished: { type: Boolean, default: false },
-    totalSaves: { type: Number, default: 0, min: 0 },
-    totalLikes: { type: Number, default: 0, min: 0 },
-    totalComments: { type: Number, default: 0, min: 0, max: 100 },
     // limiting the number of comments allowed on a single blog
     views: { type: Number, default: 0, min: 0 },
-    comments: [{ type: id, ref: "Comment" }],
-    reports: [{ type: id, ref: "Report" }],
-    savedBy: [{ type: id, ref: "User" }],
+    // comments: [{ type: id, ref: "Comment" }],
+    // reports: [{ type: id, ref: "Report" }],
+    // savedBy: [{ type: id, ref: "User" }],
     orphaning: {
       orphanedAt: { type: Date, default: Date.now },
       isOrphaned: { type: Boolean, default: false },
     },
+    adminStatus: {
+      type: String,
+      enum: ["approved", "rejected", "flagged", "pending"],
+      default: "pending",
+    },
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
 // BlogSchema.plugin(mongooseAggregatePaginate);
@@ -58,6 +58,24 @@ BlogSchema.index(
   { orphaning: 1 },
   { expireAfterSeconds: ENV_VARIABLES.expireAfterOrphandedBlogs }
 );
+
+BlogSchema.virtual("comments", {
+  ref: "Comment",
+  localField: "comments",
+  foreignField: "blog",
+});
+
+BlogSchema.virtual("reports", {
+  ref: "Report",
+  localField: "reports",
+  foreignField: "blog",
+});
+
+BlogSchema.virtual("savedBy", {
+  ref: "User",
+  localField: "savedBy",
+  foreignField: "savedBlogs",
+});
 
 const Blog = mongoose.model<IBlog>("Blog", BlogSchema);
 export default Blog;

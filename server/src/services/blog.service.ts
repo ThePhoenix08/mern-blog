@@ -18,6 +18,7 @@ import { IComment } from "models/comment.model";
 import { IReport } from "models/report.model";
 import { INotif } from "models/notif.model";
 
+/** hardcoded for blog search only */
 export const formSearchQuery = async (options: Record<string, any>) => {
   // populating query filters
   const query: Record<string, any> = {};
@@ -61,6 +62,16 @@ export const formSearchQuery = async (options: Record<string, any>) => {
       { tags: { $regex: options.searchTerm, $options: "i" } },
       { slug: { $regex: options.searchTerm, $options: "i" } },
     ];
+  }
+
+  // admin only filters
+  if (options?.adminFilters) {
+    const { isPublished, adminStatus } = options.adminFilters;
+
+    if (isPublished) query.isPublished = isPublished;
+
+    if (adminStatus)
+      query.adminStatus = adminStatus;
   }
 
   return {

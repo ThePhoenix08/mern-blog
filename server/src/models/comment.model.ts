@@ -11,6 +11,7 @@ export interface IComment extends Document {
     orphanedAt: Date;
     isOrphaned: boolean;
   };
+  adminStatus: "approved" | "rejected" | "flagged" | "pending";
 }
 
 const commentSchema: Schema = new Schema(
@@ -22,8 +23,13 @@ const commentSchema: Schema = new Schema(
       orphanedAt: { type: Date, default: Date.now },
       isOrphaned: { type: Boolean, default: false },
     },
+    adminStatus: {
+      type: String,
+      enum: ["approved", "rejected", "flagged", "pending"],
+      default: "pending",
+    },
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
 // import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
@@ -33,6 +39,13 @@ commentSchema.virtual("likes", {
   ref: "User",
   localField: "likedComments",
   foreignField: "likes",
+});
+
+commentSchema.virtual("blogger", {
+  ref: "Blogger",
+  localField: "blog",
+  foreignField: "blogsByMe",
+  justOne: true,
 });
 
 commentSchema.index(

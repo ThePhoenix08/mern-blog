@@ -30,7 +30,6 @@ export interface IUser extends Document {
       subscribedTo: boolean;
     };
   };
-
   isPasswordCorrect(argPassword: string): Promise<boolean>;
   generateAccessToken(): Promise<string>;
   generateRefreshToken(): Promise<string>;
@@ -82,7 +81,7 @@ const userSchema: Schema<IUser> = new Schema(
       },
     },
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
 userSchema.virtual("savedBlogs", {

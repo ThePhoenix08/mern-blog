@@ -5,8 +5,20 @@ import { deleteManySchema } from "./common.validator";
 const createReportSchema = z.object({
   reason: z.string().min(1, "Reason is required"),
   reportedBy: idSchema.shape.id,
-  target: idSchema.shape.id,
-  targetType: z.enum(["blog", "comment"]),
+  relatedDocs: z.discriminatedUnion("targetType", [
+    z.object({
+      targetType: z.literal("blog"),
+      blog: idSchema.shape.id,
+    }),
+    z.object({
+      targetType: z.literal("comment"),
+      comment: idSchema.shape.id,
+    }),
+    z.object({
+      targetType: z.literal("user"),
+      user: idSchema.shape.id,
+    }),
+  ]),
 });
 
 const deleteReportsSchema = deleteManySchema;

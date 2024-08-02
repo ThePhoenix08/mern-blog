@@ -51,6 +51,10 @@ const uploadManyImagesSchema = z.object({
   files: z.array(z.instanceof(File)),
 });
 
+const toggleBlogSaveSchema = z.object({
+  isSaved: z.boolean(),
+});
+
 export {
   getBlogsSchema,
   createBlogSchema,
@@ -58,4 +62,5 @@ export {
   idSchema,
   deleteBlogsSchema,
   uploadManyImagesSchema,
+  toggleBlogSaveSchema,
 };

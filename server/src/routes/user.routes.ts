@@ -48,7 +48,7 @@ userRouter
     authenticate,
     authoriseRole("user"),
     upload.single("avatar"),
-    userController.updateAvatar
+    userController.uploadAvatar
   );
 
 userRouter
@@ -57,7 +57,7 @@ userRouter
     authenticate,
     authoriseRole("user"),
     upload.single("coverImage"),
-    userController.updateCoverImage
+    userController.uploadCoverImage
   );
 
 userRouter
@@ -65,20 +65,12 @@ userRouter
   .post(
     authenticate,
     authoriseRole("user"),
-    userController.ToggleSubscribeToBlogger
+    userController.toggleSubscribeToBlogger
   );
 
 userRouter
   .route("/myComments")
   .post(authenticate, authoriseRole("user"), userController.getUserComments);
-
-// admin routes
-userRouter.route('/')
-.get(
-  authenticate, 
-  authoriseRole("admin"), 
-  userController.getUsers
-);
 
 export default userRouter;
 

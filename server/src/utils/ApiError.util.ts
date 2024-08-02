@@ -17,6 +17,7 @@ class ApiError extends Error {
     DocumentNotFoundError: 404,
     TokenExpiredError: 401,
     InvalidRefreshTokenError: 401,
+    AnalyticsError: 500,
   };
 
   CustomErrorsMessages: Record<string, string> = {
@@ -33,6 +34,7 @@ class ApiError extends Error {
     RequestUndefinedError: "Request undefined",
     UnauthorizedRequestError: "Unauthorized request",
     UpdateError: "Error while updating document",
+    AnalyticsError: "Error while getting analytics",
   };
 
   constructor({
