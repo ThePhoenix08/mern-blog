@@ -1,8 +1,10 @@
-import { string, z } from "zod";
+import { z } from "zod";
 import { idSchema } from "./blog.validator";
 import { deleteManySchema, paginationSchema } from "./common.validator";
 
-const getNotifsSchema = paginationSchema;
+const getNotifsSchema = paginationSchema.extend({
+  unread: z.boolean().default(false),
+});
 
 const notifSchema = z.object({
   user: z.string().min(1, "User is required"),
@@ -15,15 +17,6 @@ const notifSchema = z.object({
   isRead: z.boolean().default(false),
 });
 
-const markNotifAsReadSchema = z.object({
-  notificationId: idSchema.shape.id,
-});
-
 const deleteNotifSchema = deleteManySchema;
 
-export {
-  getNotifsSchema,
-  markNotifAsReadSchema,
-  deleteNotifSchema,
-  notifSchema,
-};
+export { getNotifsSchema, deleteNotifSchema, notifSchema };

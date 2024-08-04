@@ -18,6 +18,7 @@ class ApiError extends Error {
     TokenExpiredError: 401,
     InvalidRefreshTokenError: 401,
     AnalyticsError: 500,
+    NotifError: 400,
   };
 
   CustomErrorsMessages: Record<string, string> = {
@@ -35,6 +36,7 @@ class ApiError extends Error {
     UnauthorizedRequestError: "Unauthorized request",
     UpdateError: "Error while updating document",
     AnalyticsError: "Error while getting analytics",
+    NotifError: "Notification error",
   };
 
   constructor({

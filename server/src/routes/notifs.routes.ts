@@ -7,7 +7,7 @@ notifRouter.use(authenticate, authoriseRole("user"));
 notifRouter.route("/").get(notifController.getNotifs);
 notifRouter
   .route("/:notifId")
-  .patch(notifController.updateNotif)
+  .patch(notifController.markAsRead)
   .delete(notifController.deleteNotif);
 
 export default notifRouter;
