@@ -1,10 +1,9 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 import ENV_VARIABLES from "../constants";
-// import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
+
 const id = Types.ObjectId;
 
 export interface IBlog extends Document {
-  adminStatus: "approved" | "rejected" | "flagged" | "pending";
   title: string;
   content: string; //markdown
   slug: string;
@@ -12,16 +11,19 @@ export interface IBlog extends Document {
   banner: string;
   images?: string[];
   links?: string[];
-  blogger: Types.ObjectId;
   views: number;
   isPublished: boolean;
+
+  blogger: Types.ObjectId;
   comments: Types.ObjectId[];
   reports: Types.ObjectId[];
   savedBy: Types.ObjectId[];
+
   orphaning: {
     orphanedAt: Date;
     isOrphaned: boolean;
   };
+  adminStatus: "approved" | "rejected" | "flagged" | "pending";
 }
 
 const BlogSchema: Schema = new Schema(
@@ -33,13 +35,14 @@ const BlogSchema: Schema = new Schema(
     images: [String],
     tags: [String],
     links: [String],
-    blogger: { type: id, required: true, ref: "User" },
-    isPublished: { type: Boolean, default: false },
-    // limiting the number of comments allowed on a single blog
     views: { type: Number, default: 0, min: 0 },
-    // comments: [{ type: id, ref: "Comment" }],
-    // reports: [{ type: id, ref: "Report" }],
-    // savedBy: [{ type: id, ref: "User" }],
+    isPublished: { type: Boolean, default: false },
+
+    blogger: { type: id, required: true, ref: "User" },
+    // comments: [{ type: id, ref: "Comment" }], virtual
+    // reports: [{ type: id, ref: "Report" }], virtual
+    // savedBy: [{ type: id, ref: "User" }], virtual
+
     orphaning: {
       orphanedAt: { type: Date, default: Date.now },
       isOrphaned: { type: Boolean, default: false },
@@ -53,7 +56,6 @@ const BlogSchema: Schema = new Schema(
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
-// BlogSchema.plugin(mongooseAggregatePaginate);
 BlogSchema.index(
   { orphaning: 1 },
   { expireAfterSeconds: ENV_VARIABLES.expireAfterOrphandedBlogs }

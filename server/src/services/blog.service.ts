@@ -1,6 +1,10 @@
-import Blog, { IBlog } from "models/blog.model";
-import { IBlogger } from "models/blogger.model";
-import { FilterQuery, SortOrder, Types } from "mongoose";
+import Blog from "@models/blog.model";
+import type { IBlog } from "@models/blog.model";
+import type { IBlogger } from "@models/blogger.model";
+import type { IComment } from "@models/comment.model";
+import type { IReport } from "@models/report.model";
+import type { INotif } from "@models/notif.model";
+import type { FilterQuery, SortOrder } from "mongoose";
 import {
   getDocumentByQuery,
   deleteDocumentsByQuery,
@@ -10,13 +14,8 @@ import {
   getDocumentsByQuery,
   checkIfDocumentsExist,
   orphanDocumentsOfModel,
-} from "services/common.service";
-import ApiError from "utils/ApiError.util";
-import { FileRequest } from "./user.service";
-import User from "models/user.model";
-import { IComment } from "models/comment.model";
-import { IReport } from "models/report.model";
-import { INotif } from "models/notif.model";
+} from "@services/common.service";
+import ApiError from "@utils/ApiError.util";
 
 /** hardcoded for blog search only */
 export const formSearchQuery = async (options: Record<string, any>) => {
@@ -70,8 +69,7 @@ export const formSearchQuery = async (options: Record<string, any>) => {
 
     if (isPublished) query.isPublished = isPublished;
 
-    if (adminStatus)
-      query.adminStatus = adminStatus;
+    if (adminStatus) query.adminStatus = adminStatus;
   }
 
   return {
@@ -148,16 +146,14 @@ export const handleBlogImagesUpload = async (
 
   const uploadedFiles = await uploadFiles(files);
   if (!uploadedFiles)
-    throw new ApiError({
-      errorType: "UploadError",
-      message: "Error while uploading files, recieved null",
+    throw ApiError.internal("Error while uploading files, recieved null", {
+      slug: "UPLOAD_ERROR",
     });
 
   const blogImagesUrls = uploadedFiles.map((file) => {
     if (!file || !file.url)
-      throw new ApiError({
-        errorType: "UploadError",
-        message: "Error while uploading files, url missing",
+      throw ApiError.internal("Error while uploading files, url missing", {
+        slug: "UPLOAD_ERROR",
       });
     return file.url;
   });
@@ -169,9 +165,8 @@ export const incrementBlogViewCount = async (blogId: string) => {
     views: { $inc: 1 },
   });
   if (!blog)
-    throw new ApiError({
-      errorType: "UpdateError",
-      message: "Error while updating blog views",
+    throw ApiError.internal("Error while updating blog view count", {
+      slug: "BLOG_UPDATE_ERROR",
     });
   return blog;
 };

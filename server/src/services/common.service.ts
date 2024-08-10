@@ -1,15 +1,15 @@
-import ApiError from "utils/ApiError.util";
-import { deleteOldUpload, handleFileUpload } from "utils/cloudinary.util";
-import { ZodSchema, ZodType } from "zod";
-
-import User, { IUser } from "models/user.model";
-import Blog from "models/blog.model";
-import Blogger from "models/blogger.model";
-import Comment from "models/comment.model";
-import Report from "models/report.model";
-import Notif from "models/notif.model";
-import { Model, Document, FilterQuery, UpdateQuery, Types } from "mongoose";
-import AuthRequest from "types/express";
+import type { Document, FilterQuery, Model, UpdateQuery } from "mongoose";
+import type { ZodType } from "zod";
+import type { IUser } from "@models/user.model";
+import type AuthRequest from "types/express";
+import Blog from "@models/blog.model";
+import Blogger from "@models/blogger.model";
+import Comment from "@models/comment.model";
+import Notif, { INotif } from "@models/notif.model";
+import Report from "@models/report.model";
+import User from "@models/user.model";
+import ApiError from "@utils/ApiError.util";
+import { handleFileUpload, deleteOldUpload } from "@utils/cloudinary.util";
 
 export interface IFile {
   identifier: string;
@@ -36,19 +36,16 @@ const modelNameToModel: Record<ModelName, Model<any>> = {
   notif: Notif,
 };
 
-export class ValidationError extends ApiError {
-  constructor(message: string) {
-    super({
-      message,
-      errorType: "ValidationError",
-    });
-    this.errorType = "ValidationError";
-  }
-}
-
 const validateZodSchema = <T>(schema: ZodType<T>, data: unknown): T => {
   const result = schema.safeParse(data);
-  if (!result.success) throw new ValidationError("Zod Validation failed");
+  if (!result.success)
+    throw ApiError.validation(
+      "Invalid or incomplete data provided in request",
+      {
+        slug: "VALIDATION_ERROR",
+        zodError: result.error.format(),
+      }
+    );
   return result.data;
 };
 
@@ -56,9 +53,8 @@ const uploadFiles = async (files: IFile[]): Promise<IFile[]> => {
   const uploadPromises = files.map(async (file) => {
     const uploadedFile = await handleFileUpload(file.path, file.identifier);
     if (!uploadedFile)
-      throw new ApiError({
-        errorType: "FileUploadError",
-        message: "Error while uploading file to cloudinary.",
+      throw ApiError.internal("Error while uploading file to cloudinary", {
+        slug: "UPLOAD_ERROR",
       });
     file.url = uploadedFile;
 
@@ -74,15 +70,13 @@ const uploadFiles = async (files: IFile[]): Promise<IFile[]> => {
 
 const getUserFromRequest = async (req: AuthRequest): Promise<IUser> => {
   if (!(req && req.user))
-    throw new ApiError({
-      errorType: "RequestUndefinedError",
-      message: "Request undefined",
+    throw ApiError.unauthorized("Unauthorized request, request is undefined", {
+      slug: "UNAUTHORIZED_REQUEST",
     });
   const user = req.user;
   if (!user)
-    throw new ApiError({
-      errorType: "UnauthorizedRequestError",
-      message: "Unauthorized request",
+    throw ApiError.unauthorized("Unauthorized request, user is undefined", {
+      slug: "UNAUTHORIZED_REQUEST",
     });
   return user;
 };
@@ -97,9 +91,8 @@ const getDocumentById = async <T extends Document>(
   const document = objectOnly ? await query.lean() : await query;
 
   if (!document) {
-    throw new ApiError({
-      errorType: "DocumentNotFoundError",
-      message: `Document not found for model: ${modelName}`,
+    throw ApiError.notFound(`Document not found for model: ${modelName}`, {
+      slug: "DOCUMENT_NOT_FOUND",
     });
   }
   return document as T;
@@ -117,10 +110,12 @@ const getDocumentByQuery = async <T extends Document>(
   ) as T;
 
   if (!document)
-    throw new ApiError({
-      errorType: "DocumentNotFoundError",
-      message: `Error while fetching documents for model ${modelName}`,
-    });
+    throw ApiError.notFound(
+      `Error while fetching document by query for model ${modelName}`,
+      {
+        slug: "DOCUMENT_NOT_FOUND",
+      }
+    );
 
   return document as T;
 };
@@ -137,10 +132,12 @@ const getDocumentsByQuery = async <T extends Document>(
   ) as T[];
 
   if (!documents)
-    throw new ApiError({
-      errorType: "DocumentNotFoundError",
-      message: `Error while fetching documents for model ${modelName}`,
-    });
+    throw ApiError.notFound(
+      `Error while fetching documents by query for model ${modelName}`,
+      {
+        slug: "DOCUMENT_NOT_FOUND",
+      }
+    );
 
   return documents;
 };
@@ -160,10 +157,12 @@ const getPaginatedDocumentsByQuery = async <T extends Document>(
   ]);
 
   if (!documents || !total)
-    throw new ApiError({
-      errorType: "DocumentNotFoundError",
-      message: `Error while fetching documents for model ${modelName}`,
-    });
+    throw ApiError.notFound(
+      `Error while fetching paginated documents for model ${modelName}`,
+      {
+        slug: "DOCUMENT_NOT_FOUND",
+      }
+    );
 
   return {
     documents: documents as T[],
@@ -180,10 +179,12 @@ const deleteDocumentsByQuery = async <T extends Document>(
   const deletedDocuments = await model.deleteMany(query).lean();
 
   if (!deletedDocuments)
-    throw new ApiError({
-      errorType: "DocumentNotFoundError",
-      message: `Error while deleting documents for model ${modelName}`,
-    });
+    throw ApiError.internal(
+      `Error while deleting documents for model ${modelName}`,
+      {
+        slug: "DOCUMENT_DELETION_ERROR",
+      }
+    );
 
   return deletedDocuments.deletedCount || 0;
 };
@@ -196,10 +197,12 @@ const deleteDocumentById = async <T extends Document>(
   const deletedDocument = await model.findByIdAndDelete(id).lean();
 
   if (!deletedDocument)
-    throw new ApiError({
-      errorType: "DocumentNotFoundError",
-      message: `Error while deleting document for model ${modelName}`,
-    });
+    throw ApiError.internal(
+      `Error while deleting document for model ${modelName}`,
+      {
+        slug: "DOCUMENT_DELETION_ERROR",
+      }
+    );
 
   return deletedDocument as T;
 };
@@ -217,10 +220,12 @@ const updateDocumentById = async <T extends Document>(
     context: "query",
   });
   if (!document)
-    throw new ApiError({
-      errorType: "DocumentNotFoundError",
-      message: `Error while updating document for model ${modelName}`,
-    });
+    throw ApiError.internal(
+      `Error while updating document for model ${modelName}`,
+      {
+        slug: "DOCUMENT_UPDATE_ERROR",
+      }
+    );
   return document as T;
 };
 
@@ -240,10 +245,12 @@ const orphanDocumentsOfModel = async <T extends Document>(
   });
 
   if (!orphanedDocuments)
-    throw new ApiError({
-      errorType: "DocumentNotFoundError",
-      message: `Error while orphaning documents for model ${modelName}`,
-    });
+    throw ApiError.internal(
+      `Error while orphaning documents for model ${modelName}`,
+      {
+        slug: "DOCUMENT_ORPHANING_ERROR",
+      }
+    );
 
   return orphanedDocuments.modifiedCount || 0;
 };
@@ -271,25 +278,46 @@ const checkIfDocumentsExist = async <T extends Document>(
   const query: Record<string, any> = givenQuery || { _id: { $in: ids } };
   const documentsExists = await getDocumentsByQuery<T>(modelName, query);
   if (!documentsExists)
-    throw new ApiError({
-      errorType: "DocumentNotFoundError",
-      message: `Error while validating document ids for model ${modelName}`,
-    });
+    throw ApiError.internal(
+      `Error while validating document ids for model ${modelName}`,
+      {
+        slug: "DOCUMENT_VALIDATION_ERROR",
+      }
+    );
   return documentsExists as T[];
 };
 
+const sendNotification = async (
+  userId: string,
+  content: string,
+  type: "comment" | "blog",
+  itemId: string
+) => {
+  const notif = await createNewDocument<INotif>("notif", {
+    user: userId,
+    type,
+    relatedItem: {
+      [type]: itemId,
+    },
+    content,
+    isRead: false,
+  });
+  return notif;
+};
+
 export {
-  validateZodSchema,
-  uploadFiles,
+  checkIfDocumentsExist,
+  createNewDocument,
+  deleteDocumentById,
+  deleteDocumentsByQuery,
   getDocumentById,
   getDocumentByQuery,
   getDocumentsByQuery,
   getPaginatedDocumentsByQuery,
-  deleteDocumentById,
-  deleteDocumentsByQuery,
-  updateDocumentById,
-  createNewDocument,
   getUserFromRequest,
   orphanDocumentsOfModel,
-  checkIfDocumentsExist,
+  updateDocumentById,
+  uploadFiles,
+  validateZodSchema,
+  sendNotification,
 };

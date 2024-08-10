@@ -4,8 +4,9 @@ const id = Types.ObjectId;
 
 export interface IReport extends Document {
   reason: string;
-  reportedBy: Types.ObjectId;
   status: "pending" | "resolved" | "dismissed";
+
+  reportedBy: Types.ObjectId;
   relatedDocs:
     | {
         targetType: "blog";
@@ -19,6 +20,7 @@ export interface IReport extends Document {
         targetType: "user";
         user?: Types.ObjectId;
       };
+
   orphaning: {
     orphanedAt: Date;
     isOrphaned: boolean;
@@ -28,12 +30,13 @@ export interface IReport extends Document {
 const ReportSchema = new Schema(
   {
     reason: { type: String, required: true },
-    reportedBy: { type: id, ref: "User", required: true },
     status: {
       type: String,
       enum: ["pending", "resolved", "dismissed"],
       default: "pending",
     },
+
+    reportedBy: { type: id, ref: "User", required: true },
     relatedDocs: {
       targetType: {
         type: String,
@@ -44,6 +47,7 @@ const ReportSchema = new Schema(
       comment: { type: id, ref: "Comment" },
       user: { type: id, ref: "User" },
     },
+
     orphaning: {
       orphanedAt: { type: Date, default: Date.now },
       isOrphaned: { type: Boolean, default: false },

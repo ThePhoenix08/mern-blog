@@ -1,41 +1,44 @@
-import { Response } from "express";
-import { IBlog } from "models/blog.model";
-import Comment, { IComment } from "models/comment.model";
-import { INotif } from "models/notif.model";
-import { IReport } from "models/report.model";
+import type { Response } from "express";
+import type { IBlog } from "models/blog.model";
+import type { IComment } from "models/comment.model";
+import type { INotif } from "models/notif.model";
+import type { IReport } from "models/report.model";
+import type AuthRequest from "types/express";
+
 import {
   validateZodSchema,
-  getDocumentsByQuery,
   getPaginatedDocumentsByQuery,
-  ValidationError,
   createNewDocument,
   getUserFromRequest,
   updateDocumentById,
   deleteDocumentsByQuery,
   orphanDocumentsOfModel,
-} from "services/common.service";
-import AuthRequest from "types/express";
-import ApiError from "utils/ApiError.util";
-import ApiResponse from "utils/ApiResponse.util";
-import asyncHandler from "utils/asyncHandler.util";
-import { idSchema } from "validators/blog.validator";
+  checkIfDocumentsExist,
+} from "@services/common.service";
+
+import ApiError from "@utils/ApiError.util";
+import ApiResponse from "@utils/ApiResponse.util";
+import asyncHandler from "@utils/asyncHandler.util";
+
+import { idSchema } from "@validators/blog.validator";
 import {
   addCommentSchema,
   updateCommentSchema,
-} from "validators/comment.validator";
-import { paginationSchema } from "validators/common.validator";
+} from "@validators/comment.validator";
+import { paginationSchema } from "@validators/common.validator";
 
 const getComments = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id: blogId } = validateZodSchema(idSchema, req.params);
-  const data = validateZodSchema(paginationSchema, req.query);
+  const data = validateZodSchema(paginationSchema, req.body);
 
   if (!data)
-    throw new ValidationError("Validation Error: Invalid request body");
+    throw ApiError.validation("Validation Error: Invalid request body", {
+      slug: "VALIDATION_ERROR",
+    });
 
   if (!data.page || !data.limit)
-    throw new ApiError({
-      errorType: "RequestUndefinedError",
-      message: "Unsufficient request data",
+    throw ApiError.badRequest("Unsufficient request data", {
+      slug: "REQUEST_INCOMPLETE",
     });
 
   const page = data.page || 1;
@@ -91,9 +94,30 @@ const addComment = asyncHandler(async (req: AuthRequest, res: Response) => {
 const updateComment = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id: commentId } = validateZodSchema(idSchema, req.params);
   const data = validateZodSchema(updateCommentSchema, req.body);
-  const { _id: userId, role } = await getUserFromRequest(req);
+  const { _id: userId } = await getUserFromRequest(req);
+  if (!userId)
+    throw ApiError.unauthorized("Unauthorized", {
+      slug: "UNAUTHORIZED",
+    });
 
-  const comment = await updateDocumentById<IComment>(
+  const comments = await checkIfDocumentsExist<IComment>("comment", [
+    commentId,
+  ]);
+  if (!comments || !comments.length || comments.length != 1 || !comments[0])
+    throw ApiError.notFound("Comment not found", {
+      slug: "COMMENT_NOT_FOUND",
+    });
+
+  const comment = comments[0];
+  if (comment.author.toString() !== userId.toString())
+    throw ApiError.forbidden(
+      "Insufficient permissions, you are not allowed to update this comment",
+      {
+        slug: "INSUFFICIENT_PERMISSIONS",
+      }
+    );
+
+  const newComment = await updateDocumentById<IComment>(
     "comment",
     commentId,
     data
@@ -102,7 +126,7 @@ const updateComment = asyncHandler(async (req: AuthRequest, res: Response) => {
   res.status(200).json(
     new ApiResponse({
       statusCode: 200,
-      data: comment,
+      data: newComment,
       message: "Comment updated successfully.",
     })
   );

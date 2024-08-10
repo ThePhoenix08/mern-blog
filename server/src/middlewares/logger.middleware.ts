@@ -1,9 +1,36 @@
-import winston from "winston";
-import ENV_VARIABLES from "../constants";
-import { Request, Response, NextFunction } from "express";
+import * as winston from "winston";
 import DailyRotateFile from "winston-daily-rotate-file";
 
-const logger = winston.createLogger({
+import { Request, Response, NextFunction } from "express";
+import ENV_VARIABLES from "../constants";
+
+const transport1 = new DailyRotateFile({
+  filename: "%DATE%.error.log",
+  datePattern: "YYYY-MM-DD-HH",
+  zippedArchive: true,
+  maxSize: "10m",
+  maxFiles: "14d",
+  dirname: "logs/errors",
+});
+
+const transport2 = new DailyRotateFile({
+  filename: "%DATE%.combined.log",
+  datePattern: "YYYY-MM-DD-HH",
+  zippedArchive: true,
+  maxSize: "20m",
+  maxFiles: "14d",
+  dirname: "logs/combined",
+});
+
+const transport3 = new DailyRotateFile({
+  format: winston.format.combine(
+    winston.format.colorize(),
+    winston.format.simple()
+  ),
+  dirname: "logs/debug",
+});
+
+export const logger = winston.createLogger({
   level: ENV_VARIABLES.nodeEnv === "production" ? "info" : "debug",
   format: winston.format.combine(
     winston.format.timestamp(),
@@ -12,29 +39,18 @@ const logger = winston.createLogger({
     winston.format.json()
   ),
   defaultMeta: { service: "blog-api" },
-  transports: [
-    new winston.transports.DailyRotateFile({
-      filename: "logs/%DATE%.error.log",
-      level: "error",
-    }),
-    new winston.transports.DailyRotateFile({
-      filename: "logs/%DATE%.combined.log",
-    }),
-  ],
+  transports: [transport1, transport2],
 });
 
 if (ENV_VARIABLES.nodeEnv !== "production") {
-  logger.add(
-    new winston.transports.DailyRotateFile({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      ),
-    })
-  );
+  logger.add(transport3);
 }
 
-const requestLogger = (req: Request, res: Response, next: NextFunction) => {
+export const requestLogger = (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+) => {
   logger.info(`${req.method} ${req.url}`, {
     headers: req.headers,
     query: req.query,
@@ -43,4 +59,11 @@ const requestLogger = (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
-export { requestLogger, logger };
+export const requestRecievedLogger = (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+) => {
+  console.log(`Received ${req.method} request to ${req.path}`);
+  next();
+};

@@ -1,28 +1,32 @@
-import { Response } from "express";
-import { IBlog } from "models/blog.model";
-import { IComment } from "models/comment.model";
-import { IReport } from "models/report.model";
-import { IUser } from "models/user.model";
+import type { Response } from "express";
+import type { IBlog } from "@models/blog.model";
+import type { IComment } from "@models/comment.model";
+import type { IReport } from "@models/report.model";
+import type { IUser } from "@models/user.model";
+import type AuthRequest from "types/express";
+
 import {
   checkIfActionIsAlreadyTaken,
   formReportSearchQuery,
   formUserSearchQuery,
   getReportsByQuery,
   getUsersByQuery,
-} from "services/admin.service";
-import { formSearchQuery, getBlogsByQuery } from "services/blog.service";
+} from "@services/admin.service";
+import { formSearchQuery, getBlogsByQuery } from "@services/blog.service";
 import {
   checkIfDocumentsExist,
   deleteDocumentById,
   getDocumentById,
+  sendNotification,
   updateDocumentById,
   validateZodSchema,
-} from "services/common.service";
-import AuthRequest from "types/express";
-import ApiError from "utils/ApiError.util";
-import ApiResponse from "utils/ApiResponse.util";
-import asyncHandler from "utils/asyncHandler.util";
-import { omit } from "utils/utilFunctions.util";
+} from "@services/common.service";
+
+import ApiError from "@utils/ApiError.util";
+import ApiResponse from "@utils/ApiResponse.util";
+import asyncHandler from "@utils/asyncHandler.util";
+import { omit } from "@utils/utilFunctions.util";
+
 import {
   getAllBlogsSchema,
   getAllReportsSchema,
@@ -32,8 +36,8 @@ import {
   moderateReportSchema,
   moderateUserSchema,
   updateUserRoleSchema,
-} from "validators/admin.validator";
-import { idSchema } from "validators/common.validator";
+} from "@validators/admin.validator";
+import { idSchema } from "@validators/common.validator";
 
 export const getAllUsers = asyncHandler(
   async (req: AuthRequest, res: Response) => {
@@ -163,12 +167,14 @@ export const moderateBlog = asyncHandler(
         break;
       }
       default: {
-        throw new ApiError({
-          errorType: "RequestUndefinedError",
-          message: "Invalid action provided",
+        throw ApiError.badRequest("Invalid action provided", {
+          slug: "ACTION_INVALID",
         });
       }
     }
+
+    // TODO => create and send notification to blogger about moderation
+    await sendNotification(blog.blogger.toString(), "", "blog", blogId);
 
     res.status(200).json(
       new ApiResponse({
@@ -180,7 +186,7 @@ export const moderateBlog = asyncHandler(
   }
 );
 
-export const deleteBlog = asyncHandler(
+export const adminDeleteBlog = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const { id: blogId } = validateZodSchema(idSchema, req.params);
 
@@ -279,9 +285,8 @@ export const moderateComment = asyncHandler(
         adminStatus: commentStatus,
       });
     } else {
-      throw new ApiError({
-        errorType: "RequestUndefinedError",
-        message: "Invalid action provided",
+      throw ApiError.badRequest("Invalid action provided", {
+        slug: "ACTION_INVALID",
       });
     }
 
@@ -295,7 +300,7 @@ export const moderateComment = asyncHandler(
   }
 );
 
-export const deleteComment = asyncHandler(
+export const adminDeleteComment = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const { id: commentId } = validateZodSchema(idSchema, req.params);
 

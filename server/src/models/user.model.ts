@@ -1,5 +1,4 @@
 import mongoose, { Schema, Document, Model, Types } from "mongoose";
-import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import ENV_VARIABLES from "../constants";
 
@@ -11,14 +10,9 @@ export interface IUser extends Document {
   fullname: string;
   password: string;
   role: "user" | "blogger" | "admin";
-  savedBlogs: Types.ObjectId[];
-  subscribedTo: Types.ObjectId[];
-  commentsByMe: Types.ObjectId[];
-  refreshToken: string;
+
   bio: string;
   avatar?: string;
-  isEmailVerified: boolean;
-  emailVerificationToken?: string;
   userSettings: {
     emailNotifications: boolean;
     darkMode: boolean;
@@ -30,12 +24,17 @@ export interface IUser extends Document {
       subscribedTo: boolean;
     };
   };
-  isPasswordCorrect(argPassword: string): Promise<boolean>;
-  generateAccessToken(): Promise<string>;
-  generateRefreshToken(): Promise<string>;
+
+  savedBlogs: Types.ObjectId[];
+  subscribedTo: Types.ObjectId[];
+  commentsByMe: Types.ObjectId[];
+
+  isEmailVerified: boolean;
+  emailVerificationToken?: string;
+  refreshToken: string;
 }
 
-const userSchema: Schema<IUser> = new Schema(
+const userSchema = new Schema<IUser>(
   {
     // essentials
     username: {
@@ -63,12 +62,6 @@ const userSchema: Schema<IUser> = new Schema(
     // common properties
     avatar: { type: String },
     bio: { type: String, default: "Hey, I am on Bloggy" },
-
-    subscribedTo: [{ type: id, ref: "User" }],
-    // commentsByMe: [{ type: id, ref: "Comment" }], virtual field
-    refreshToken: { type: String },
-    isEmailVerified: { type: Boolean, default: false },
-    emailVerificationToken: { type: String },
     userSettings: {
       emailNotifications: { type: Boolean, default: false },
       darkMode: { type: Boolean, default: false },
@@ -80,6 +73,14 @@ const userSchema: Schema<IUser> = new Schema(
         subscribedTo: { type: Boolean, default: false },
       },
     },
+
+    subscribedTo: [{ type: id, ref: "User" }],
+    // commentsByMe: [{ type: id, ref: "Comment" }], virtual field
+    // savedBlogs: [{ type: id, ref: "Blog" }], virtual field
+
+    isEmailVerified: { type: Boolean, default: false },
+    emailVerificationToken: { type: String },
+    refreshToken: { type: String },
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
@@ -107,39 +108,6 @@ userSchema.pre<IUser>("save", async function (next) {
     next(error);
   }
 });
-
-userSchema.methods.isPasswordCorrect = async function (
-  this: IUser,
-  argPassword: string
-): Promise<boolean> {
-  const isCorrect = await bcrypt.compare(argPassword, this.password);
-  return isCorrect;
-};
-
-userSchema.methods.generateAccessToken = async function (
-  this: IUser
-): Promise<string> {
-  return jwt.sign(
-    {
-      _id: this._id,
-      email: this.email,
-      role: this.role,
-    },
-    ENV_VARIABLES.accessTokenSecret as jwt.Secret,
-    { expiresIn: ENV_VARIABLES.accessTokenExpiry }
-  );
-};
-userSchema.methods.generateRefreshToken = async function (
-  this: IUser
-): Promise<string> {
-  return jwt.sign(
-    {
-      _id: this._id,
-    },
-    ENV_VARIABLES.refreshTokenSecret as jwt.Secret,
-    { expiresIn: ENV_VARIABLES.refreshTokenExpiry }
-  );
-};
 
 const User: Model<IUser> = mongoose.model<IUser>("User", userSchema);
 

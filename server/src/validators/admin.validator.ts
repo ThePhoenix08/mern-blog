@@ -3,7 +3,6 @@ import { getBlogsSchema, idSchema } from "./blog.validator";
 import { paginationSchema } from "./common.validator";
 
 const updateUserRoleSchema = z.object({
-  userId: idSchema.shape.id,
   role: z.enum(["user", "blogger"]),
 });
 
@@ -88,13 +87,11 @@ const getAllCommentsSchema = paginationSchema.extend({
 });
 
 const moderateCommentSchema = z.object({
-  commentId: idSchema.shape.id,
   action: z.enum(["approve", "reject", "flag"]),
   reason: z.string().min(1, "Reason is required").optional(),
 });
 
 const moderateUserSchema = z.object({
-  userId: idSchema.shape.id,
   action: z.enum(["ban", "unban"]),
 });
 

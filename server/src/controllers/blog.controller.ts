@@ -1,6 +1,8 @@
-import { Response } from "express";
-import { IBlog } from "models/blog.model";
-import { IUser } from "models/user.model";
+import type { Response } from "express";
+import type { IBlog } from "@models/blog.model";
+import type { IUser } from "@models/user.model";
+import type AuthRequest from "types/express";
+
 import {
   deleteBlogsByQuery,
   formSearchQuery,
@@ -8,18 +10,19 @@ import {
   getBlogTagsFromAllBlogs,
   handleBlogImagesUpload,
   incrementBlogViewCount,
-} from "services/blog.service";
+} from "@services/blog.service";
 import {
   createNewDocument,
   getDocumentById,
   getUserFromRequest,
   updateDocumentById,
   validateZodSchema,
-} from "services/common.service";
-import AuthRequest from "types/express";
-import ApiError from "utils/ApiError.util";
-import ApiResponse from "utils/ApiResponse.util";
-import asyncHandler from "utils/asyncHandler.util";
+} from "@services/common.service";
+
+import ApiError from "@utils/ApiError.util";
+import ApiResponse from "@utils/ApiResponse.util";
+import asyncHandler from "@utils/asyncHandler.util";
+
 import {
   createBlogSchema,
   deleteBlogsSchema,
@@ -27,7 +30,7 @@ import {
   idSchema,
   toggleBlogSaveSchema,
   updateBlogSchema,
-} from "validators/blog.validator";
+} from "@validators/blog.validator";
 
 const getBlogs = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { options } = validateZodSchema(getBlogsSchema, req.body);
@@ -56,18 +59,19 @@ const getBlogs = asyncHandler(async (req: AuthRequest, res: Response) => {
 const deleteBlogs = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { ids } = validateZodSchema(deleteBlogsSchema, req.body);
   if (!ids || !Array.isArray(ids) || ids.length === 0)
-    throw new ApiError({
-      errorType: "RequestUndefinedError",
-      message: "No blogs specified to delete",
+    throw ApiError.badRequest("No blogs specified to delete", {
+      slug: "BLOG_IDS_ABSENT",
     });
 
   const user = await getUserFromRequest(req);
   const role = user.role;
   if (role === "user")
-    throw new ApiError({
-      errorType: "UnauthorizedRequestError",
-      message: "User attempted to delete blogs",
-    });
+    throw ApiError.forbidden(
+      "Insufficient permissions, User attempted to delete blogs",
+      {
+        slug: "INSUFFICIENT_PERMISSIONS",
+      }
+    );
 
   const deletedCount = await deleteBlogsByQuery(ids, role, user._id as string);
 
@@ -86,19 +90,20 @@ const createBlog = asyncHandler(async (req: AuthRequest, res: Response) => {
   const blogData = validateZodSchema(createBlogSchema, req.body);
   const blogImages = req.files ? req.files : null;
   if (!blogData || !blogImages || !Array.isArray(blogImages))
-    throw new ApiError({
-      errorType: "RequestUndefinedError",
-      message: "Request undefined",
+    throw ApiError.badRequest("Request doesnt not provide required data", {
+      slug: "REQUEST_INCOMPLETE",
     });
 
   const user = await getUserFromRequest(req);
   const role = user.role;
 
   if (role === "user")
-    throw new ApiError({
-      errorType: "UnauthorizedRequestError",
-      message: "Non Blogger user attempted to create blog",
-    });
+    throw ApiError.forbidden(
+      "Insufficient permissions, Non Blogger user attempted to create blog",
+      {
+        slug: "INSUFFICIENT_PERMISSIONS",
+      }
+    );
 
   const blogImagesUrls = await handleBlogImagesUpload(blogImages);
 
@@ -107,6 +112,7 @@ const createBlog = asyncHandler(async (req: AuthRequest, res: Response) => {
     ...blogData,
     blogger: userId,
     images: blogImagesUrls,
+    banner: blogImagesUrls[0],
   });
 
   res.status(200).json(
@@ -122,7 +128,7 @@ const getBlog = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { id } = validateZodSchema(idSchema, req.params);
   const blog = await getDocumentById<IBlog>("blog", id);
   const updatedBlog = await incrementBlogViewCount(blog._id as string);
-  const returnBlog = updatedBlog.populate("blogger");
+  const returnBlog = await updatedBlog.populate("blogger");
 
   res.status(200).json(
     new ApiResponse({
@@ -141,18 +147,22 @@ const updateBlog = asyncHandler(async (req: AuthRequest, res: Response) => {
   const role = user.role;
 
   if (role === "user")
-    throw new ApiError({
-      errorType: "UnauthorizedRequestError",
-      message: "Non Blogger user attempted to update blog",
-    });
+    throw ApiError.forbidden(
+      "Insufficient permissions, Non Blogger user attempted to update blog",
+      {
+        slug: "INSUFFICIENT_PERMISSIONS",
+      }
+    );
 
   const existingBlog = await getDocumentById<IBlog>("blog", blogId);
 
   if (existingBlog.blogger.toString() !== (user._id as string).toString())
-    throw new ApiError({
-      errorType: "UnauthorizedRequestError",
-      message: "Non Blogger user attempted to update blog",
-    });
+    throw ApiError.forbidden(
+      "Insufficient permissions, user is not allowed to update this blog",
+      {
+        slug: "INSUFFICIENT_PERMISSIONS",
+      }
+    );
 
   let newImagesUrls: string[] = [];
   if (req.files && Array.isArray(req.files)) {
@@ -186,11 +196,18 @@ const deleteBlog = asyncHandler(async (req: AuthRequest, res: Response) => {
   const user = await getUserFromRequest(req);
   const role = user.role;
 
+  if (role === "user")
+    throw ApiError.forbidden(
+      "Insufficient permissions, User attempted to delete blogs",
+      {
+        slug: "INSUFFICIENT_PERMISSIONS",
+      }
+    );
+
   const result = await deleteBlogsByQuery([blogId], role, user._id as string);
   if (!result || result === 1)
-    throw new ApiError({
-      errorType: "DeleteError",
-      message: "Error while deleting singleblog",
+    throw ApiError.internal("Error while deleting singleblog", {
+      slug: "BLOG_DELETION_ERROR",
     });
 
   res.status(200).json(
@@ -225,7 +242,7 @@ const toggleBlogSave = asyncHandler(async (req: AuthRequest, res: Response) => {
   );
 });
 
-const getBlogTags = asyncHandler(async (req: AuthRequest, res: Response) => {
+const getBlogTags = asyncHandler(async (_req: AuthRequest, res: Response) => {
   // get distinct tags from all blog posts
 
   const blogTags: string[] = await getBlogTagsFromAllBlogs();

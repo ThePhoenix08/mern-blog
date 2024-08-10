@@ -4,9 +4,12 @@ const id = Types.ObjectId;
 
 export interface IComment extends Document {
   content: string;
+
   author: Types.ObjectId;
   blog: Types.ObjectId;
+  blogger: Types.ObjectId;
   likes: Types.ObjectId[];
+
   orphaning: {
     orphanedAt: Date;
     isOrphaned: boolean;
@@ -17,8 +20,12 @@ export interface IComment extends Document {
 const commentSchema: Schema = new Schema(
   {
     content: { type: String, required: true },
+
     author: { type: id, required: true, ref: "User" },
     blog: { type: id, required: true, ref: "Blog" },
+    // blogger: { type: id, ref: "Blogger" }, virtual
+    // likes: [{ type: id, ref: "User" }], virtual
+
     orphaning: {
       orphanedAt: { type: Date, default: Date.now },
       isOrphaned: { type: Boolean, default: false },
@@ -31,9 +38,6 @@ const commentSchema: Schema = new Schema(
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
-
-// import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
-// CommentSchema.plugin(mongooseAggregatePaginate);
 
 commentSchema.virtual("likes", {
   ref: "User",

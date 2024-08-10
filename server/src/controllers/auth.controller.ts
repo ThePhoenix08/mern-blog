@@ -1,11 +1,16 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
+import type AuthRequest from "types/express";
+import type { IUser } from "@models/user.model";
+
 import {
   checkIfPasswordIsCorrect,
   checkIfUserExists,
   checkIfUserIsVerified,
+  generateAccessToken,
+  generateRefreshToken,
   validateRefreshToken,
   validateRequest,
-} from "services/auth.service";
+} from "@services/auth.service";
 import {
   createNewDocument,
   getDocumentById,
@@ -13,19 +18,19 @@ import {
   getUserFromRequest,
   updateDocumentById,
   validateZodSchema,
-} from "services/common.service";
-import AuthRequest from "types/express";
-import { omit } from "utils/utilFunctions.util";
-import { IUser } from "../models/user.model";
-import ApiError from "../utils/ApiError.util";
-import ApiResponse from "../utils/ApiResponse.util";
-import asyncHandler from "../utils/asyncHandler.util";
+} from "@services/common.service";
+
+import { omit } from "@utils/utilFunctions.util";
+import ApiError from "@utils/ApiError.util";
+import ApiResponse from "@utils/ApiResponse.util";
+import asyncHandler from "@utils/asyncHandler.util";
+
 import {
   forgetPasswordSchema,
   loginSchema,
   registerSchema,
   resetPasswordSchema,
-} from "../validators/auth.validator";
+} from "@validators/auth.validator";
 
 // BOOKMARK => using { sameSite: true }
 const options: {
@@ -49,23 +54,21 @@ const registerUser = asyncHandler(async (req: Request, res: Response) => {
 
   let user = await checkIfUserExists(data.username, data.email, false);
   if (user)
-    throw new ApiError({
-      errorType: "UserAlreadyExistsError",
-      message: "User already exists",
+    throw ApiError.conflict("User already exists", {
+      slug: "USER_ALREADY_EXISTS",
     });
 
   user = await createNewDocument<IUser>("user", data);
   user = await getDocumentById<IUser>("user", user._id as string);
 
   // TODO => Send verification email
-
-  const accessToken = await user.generateAccessToken();
-  const refreshToken = await user.generateRefreshToken();
+  const accessToken = await generateAccessToken(user);
+  const refreshToken = await generateRefreshToken(user);
 
   user = await updateDocumentById<IUser>("user", user._id as string, {
     refreshToken,
   });
-  user = omit(user, ["password", "refreshToken"]);
+  const newUser = omit(user, ["password", "refreshToken"]);
 
   return res
     .status(200)
@@ -74,7 +77,7 @@ const registerUser = asyncHandler(async (req: Request, res: Response) => {
     .json(
       new ApiResponse({
         statusCode: 200,
-        data: user,
+        data: newUser,
         message: "User registered successfully",
       })
     );
@@ -94,21 +97,20 @@ const loginUser = asyncHandler(async (req: Request, res: Response) => {
 
   let user = await checkIfUserExists(data.username, data.email, true);
   if (!user)
-    throw new ApiError({
-      errorType: "UserNotFoundError",
-      message: "User not found",
+    throw ApiError.notFound("Invalid Credentials, User not found", {
+      slug: "USER_NOT_FOUND",
     });
 
   checkIfUserIsVerified(user.email);
-  checkIfPasswordIsCorrect(data.password, user);
+  await checkIfPasswordIsCorrect(data.password, user);
 
-  const accessToken = await user.generateAccessToken();
-  const refreshToken = await user.generateRefreshToken();
+  const accessToken = await generateAccessToken(user);
+  const refreshToken = await generateRefreshToken(user);
 
   user = await updateDocumentById<IUser>("user", user._id as string, {
     refreshToken,
   });
-  user = omit(user, ["password", "refreshToken"]);
+  const returnUser = omit(user, ["password", "refreshToken"]);
 
   res
     .status(200)
@@ -117,7 +119,7 @@ const loginUser = asyncHandler(async (req: Request, res: Response) => {
     .json(
       new ApiResponse({
         statusCode: 200,
-        data: user,
+        data: returnUser,
         message: "User logged in successfully",
       })
     );
@@ -132,7 +134,7 @@ const handleRefreshUser = asyncHandler(async (req: Request, res: Response) => {
 
   const clientRefreshToken = await validateRequest(req);
   const { user } = await validateRefreshToken(clientRefreshToken);
-  const accessToken = await user.generateAccessToken();
+  const accessToken = await generateAccessToken(user);
 
   return res
     .status(200)
@@ -165,7 +167,7 @@ const handleForgetPassword = asyncHandler(
       password: data.password,
     });
 
-    const accessToken = await user.generateAccessToken();
+    const accessToken = await generateAccessToken(user);
 
     return res
       .status(200)
@@ -192,7 +194,7 @@ const handleResetPassword = asyncHandler(
 
     let user = await getUserFromRequest(req);
 
-    checkIfPasswordIsCorrect(data.oldPassword, user);
+    await checkIfPasswordIsCorrect(data.oldPassword, user);
 
     user = await updateDocumentById<IUser>("user", user._id as string, {
       password: data.newPassword,
@@ -232,6 +234,9 @@ const logoutUser = asyncHandler(async (req: AuthRequest, res: Response) => {
 });
 
 // TODO => add email verification
+const handleVerifyUser = asyncHandler(
+  async (_req: AuthRequest, _res: Response) => {}
+);
 
 export {
   handleForgetPassword,
@@ -240,4 +245,5 @@ export {
   loginUser,
   logoutUser,
   registerUser,
+  handleVerifyUser,
 };

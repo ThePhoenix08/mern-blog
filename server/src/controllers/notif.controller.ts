@@ -1,5 +1,5 @@
-import { INotif } from "models/notif.model";
-import { FilterQuery } from "mongoose";
+import type { INotif } from "@models/notif.model";
+import type { FilterQuery } from "mongoose";
 import {
   checkIfDocumentsExist,
   deleteDocumentById,
@@ -7,11 +7,11 @@ import {
   getUserFromRequest,
   updateDocumentById,
   validateZodSchema,
-} from "services/common.service";
-import ApiError from "utils/ApiError.util";
-import asyncHandler from "utils/asyncHandler.util";
-import { idSchema } from "validators/common.validator";
-import { getNotifsSchema } from "validators/notif.validator";
+} from "@services/common.service";
+import ApiError from "@utils/ApiError.util";
+import asyncHandler from "@utils/asyncHandler.util";
+import { idSchema } from "@validators/common.validator";
+import { getNotifsSchema } from "@validators/notif.validator";
 
 const getNotifs = asyncHandler(async (req, res) => {
   const data = validateZodSchema(getNotifsSchema, req.body);
@@ -42,16 +42,14 @@ const markAsRead = asyncHandler(async (req, res) => {
 
   const docs = await checkIfDocumentsExist<INotif>("notif", [notificationId]);
   if (!docs || !docs.length || docs.length !== 1) {
-    throw new ApiError({
-      errorType: "DocumentNotFoundError",
-      message: "Notification not found.",
+    throw ApiError.notFound("Notification not found", {
+      slug: "NOTIFICATION_NOT_FOUND",
     });
   }
   const oldNotification = docs[0];
   if (oldNotification.isRead) {
-    throw new ApiError({
-      errorType: "NotifError",
-      message: "Notification already read.",
+    throw ApiError.conflict("Notification already marked as read", {
+      slug: "NOTIFICATION_ALREADY_READ",
     });
   }
 
@@ -72,9 +70,8 @@ const deleteNotif = asyncHandler(async (req, res) => {
 
   const docs = await checkIfDocumentsExist<INotif>("notif", [notificationId]);
   if (!docs || !docs.length || docs.length !== 1) {
-    throw new ApiError({
-      errorType: "DocumentNotFoundError",
-      message: "Notification not found.",
+    throw ApiError.notFound("Notification not found", {
+      slug: "NOTIFICATION_NOT_FOUND",
     });
   }
 

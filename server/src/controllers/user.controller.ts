@@ -3,7 +3,6 @@ import { IBlogger } from "models/blogger.model";
 import { IComment } from "models/comment.model";
 import {
   deleteDocumentById,
-  deleteDocumentsByQuery,
   getDocumentById,
   getPaginatedDocumentsByQuery,
   getUserFromRequest,
@@ -24,10 +23,10 @@ import { IUser } from "../models/user.model";
 import ApiError from "../utils/ApiError.util";
 import ApiResponse from "../utils/ApiResponse.util";
 import asyncHandler from "../utils/asyncHandler.util";
-import { omit } from "../utils/utilFunctions.util";
-import { IReport } from "models/report.model";
-import { INotif } from "models/notif.model";
-import { IBlog } from "models/blog.model";
+import type { IReport } from "@models/report.model";
+import type { INotif } from "@models/notif.model";
+import type { IBlog } from "@models/blog.model";
+import { omit } from "@utils/utilFunctions.util";
 
 export const getProfile = asyncHandler(
   async (req: AuthRequest, res: Response) => {
@@ -36,19 +35,18 @@ export const getProfile = asyncHandler(
 
     user =
       role === "blogger"
-        ? await getDocumentById("blogger", user._id as string)
-        : await getDocumentById("user", user._id as string);
+        ? await getDocumentById<UserWithOptionalBloggerFields>(
+            "blogger",
+            user._id as string
+          )
+        : await getDocumentById<IUser>("user", user._id as string);
 
     if (!user)
-      throw new ApiError({
-        message: `${role} not found`,
-        errorType: "UserNotFoundError",
+      throw ApiError.notFound("User not found", {
+        slug: "USER_NOT_FOUND",
       });
 
-    const returnUser: Object = omit(user.toObject(), [
-      "refreshToken",
-      "password",
-    ]);
+    const returnUser: Object = omit(user, ["refreshToken", "password"]);
 
     res.status(200).json(
       new ApiResponse({
@@ -78,10 +76,12 @@ export const updateProfile = asyncHandler(
       isBlogger
     );
     if (!uploadedFileUrls)
-      throw new ApiError({
-        errorType: "UploadError",
-        message: "Error while uploading files, recieved null",
-      });
+      throw ApiError.internal(
+        "Error while uploading files, recieved null from uploader",
+        {
+          slug: "UPLOAD_ERROR",
+        }
+      );
 
     const updatedData = {
       ...data,
@@ -162,9 +162,8 @@ export const getUserPublicProfile = asyncHandler(async (req, res) => {
   3. Return success response with public profile data */
 
   if (!req.params || !req.params.userId) {
-    throw new ApiError({
-      errorType: "RequestUndefinedError",
-      message: "Request undefined",
+    throw ApiError.badRequest("Request doesnt not provide required data", {
+      slug: "REQUEST_INCOMPLETE",
     });
   }
   const userId = req.params.userId;
@@ -209,9 +208,8 @@ export const uploadAvatar = asyncHandler(async (req, res) => {
     "avatars"
   );
   if (!uploadedFileUrl)
-    throw new ApiError({
-      errorType: "UploadError",
-      message: "Error while uploading file, recieved null",
+    throw ApiError.internal("Error while uploading file, recieved null", {
+      slug: "UPLOAD_ERROR",
     });
 
   const user = await getUserFromRequest(req);
@@ -240,9 +238,8 @@ export const uploadCoverImage = asyncHandler(async (req, res) => {
     "covers"
   );
   if (!uploadedFileUrl)
-    throw new ApiError({
-      errorType: "UploadError",
-      message: "Error while uploading file, recieved null",
+    throw ApiError.internal("Error while uploading file, recieved null", {
+      slug: "UPLOAD_ERROR",
     });
 
   const user = await getUserFromRequest(req);
@@ -268,9 +265,8 @@ export const toggleSubscribeToBlogger = asyncHandler(async (req, res) => {
   // 4. Return success response with updated subscription status
 
   if (!req.params || !req.params.bloggerId) {
-    throw new ApiError({
-      errorType: "RequestUndefinedError",
-      message: "Request undefined",
+    throw ApiError.badRequest("Request doesnt not provide required data", {
+      slug: "REQUEST_INCOMPLETE",
     });
   }
 

@@ -1,7 +1,7 @@
-import { IUser } from "../models/user.model";
+import type { IUser } from "../models/user.model";
+import type { Request } from "express";
+import type { Document } from "mongoose";
 import * as multer from "multer";
-import { Request } from "express";
-import { Document } from "mongoose";
 
 interface AuthRequest extends Express.Request, Request {
   user?: Document<unknown, {}, IUser> &

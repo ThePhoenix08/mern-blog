@@ -1,7 +1,6 @@
-import { Model, Document, Types, FilterQuery, SortOrder } from "mongoose";
+import type { Model, Document, FilterQuery, SortOrder } from "mongoose";
 import ApiError from "utils/ApiError.util";
 
-type documentId = Types.ObjectId;
 export interface AnalyticsOptions {
   startDate?: Date;
   endDate?: Date;
@@ -38,10 +37,8 @@ export class AnalyticsService {
         else return 100%
     */
     if (current < 0 || previous < 0)
-      throw new ApiError({
-        statusCode: 500,
-        message: "Invalid values for current and previous",
-        errorType: "AnalyticsError",
+      throw ApiError.internal("Invalid values for current and previous", {
+        slug: "ANALYTICS_ERROR",
       });
 
     if (current === 0) {
@@ -50,7 +47,7 @@ export class AnalyticsService {
     return ((current - previous) / previous) * 100;
   };
 
-  private formQuery<T extends Document>(
+  private formQuery(
     startDate?: Date,
     endDate?: Date,
     additionalQuery?: FilterQuery<any>
@@ -76,10 +73,8 @@ export class AnalyticsService {
 
     const docsCount = await Model.countDocuments(query).lean();
     if (!docsCount) {
-      throw new ApiError({
-        statusCode: 500,
-        message: "Error in getting document counts",
-        errorType: "AnalyticsError",
+      throw ApiError.internal("Error in getting document counts", {
+        slug: "ANALYTICS_ERROR",
       });
     }
 
@@ -130,10 +125,8 @@ export class AnalyticsService {
     ]);
 
     if (!result) {
-      throw new ApiError({
-        statusCode: 500,
-        message: "Error in getting document metrics over time",
-        errorType: "AnalyticsError",
+      throw ApiError.internal("Error in getting document metrics over time", {
+        slug: "ANALYTICS_ERROR",
       });
     }
     if (result.length === 0) return [];
@@ -154,7 +147,10 @@ export class AnalyticsService {
     const growthRates = [];
 
     for (let i = 0; i < metricsOverTime.length - 1; i++) {
-      const { count: current, date } = metricsOverTime[i];
+      if (!metricsOverTime[i] || !metricsOverTime[i + 1]) break;
+
+      const current = metricsOverTime[i].count;
+      const date = metricsOverTime[i].date;
       const previous = metricsOverTime[i + 1].count;
       const growthRate = this.calculateGrowthRate(current, previous);
       growthRates.push({ date, growthRate });
@@ -182,10 +178,8 @@ export class AnalyticsService {
       .limit(limit)
       .lean();
     if (!result) {
-      throw new ApiError({
-        statusCode: 500,
-        message: "Error in getting top performers",
-        errorType: "AnalyticsError",
+      throw ApiError.internal("Error in getting top performers", {
+        slug: "ANALYTICS_ERROR",
       });
     }
 

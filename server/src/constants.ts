@@ -3,7 +3,13 @@ dotenv.config({
   path: "./.env",
 });
 
-const requiredEnvVars = ["PORT", "MONGO_URI", "CORS_ORIGIN"];
+const requiredEnvVars = [
+  "PORT",
+  "MONGO_URI",
+  "CORS_ORIGIN",
+  "CLOUDINARY_API_KEY",
+  "CLOUDINARY_API_SECRET",
+];
 
 requiredEnvVars.forEach((varName) => {
   if (!process.env[varName]) {
@@ -13,7 +19,8 @@ requiredEnvVars.forEach((varName) => {
 
 const ENV_VARIABLES = {
   port: process.env.PORT || 3000,
-  mongoUri: process.env.MONGO_URI || "mongodb://localhost:27017/your-app",
+  mongoUri: process.env.MONGO_URI || "mongodb://localhost:27017/mern-blog", // fallback
+  localUri: "mongodb://localhost:27017/mern-blog",
   corsOrigin: process.env.CORS_ORIGIN,
   nodeEnv: process.env.NODE_ENV || "development",
 

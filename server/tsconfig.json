@@ -1,12 +1,37 @@
 {
   "compilerOptions": {
-    "module": "NodeNext",
-    "baseUrl": "./src",
+    "lib": ["ESNext"],
     "outDir": "./dist",
+    "removeComments": true,
+    "target": "ES6",
+
+    "baseUrl": "./src",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "paths": {
+      "@controllers/*": ["controllers/*"],
+      "@services/*": ["services/*"],
+      "@models/*": ["models/*"],
+      "@middlewares/*": ["middlewares/*"],
+      "@utils/*": ["utils/*"],
+      "@validators/*": ["validators/*"],
+      "@routes/*": ["routes/*"],
+      "@constants": ["constants"]
+    },
+
     "sourceMap": true,
+    "sourceRoot": "/",
+
+    "alwaysStrict": true,
     "noImplicitAny": true,
-    "strict": true,
-    "typeRoots": ["./node_modules/@types", "./src/types/express.d.ts"]
+    // "strictNullChecks": true, TODO: dare to enable strictNullChecks (#｀-_ゝ-)
+    "allowUnreachableCode": false,
+
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

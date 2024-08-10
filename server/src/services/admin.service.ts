@@ -1,9 +1,9 @@
-import ApiError from "utils/ApiError.util";
-import { Document } from "mongoose";
-import User, { IUser } from "models/user.model";
-import Report from "models/report.model";
-import { FilterQuery, SortOrder } from "mongoose";
-import { IReport } from "models/report.model";
+import type { FilterQuery, SortOrder, Document } from "mongoose";
+import Report from "@models/report.model";
+import User from "@models/user.model";
+import type { IReport } from "@models/report.model";
+import type { IUser } from "@models/user.model";
+import ApiError from "@utils/ApiError.util";
 
 export const checkIfActionIsAlreadyTaken = async <T extends Document>(
   document: T & {
@@ -19,10 +19,12 @@ export const checkIfActionIsAlreadyTaken = async <T extends Document>(
 
   const documentStatus = actionToStatusMap[action];
   if (document.adminStatus === documentStatus) {
-    throw new ApiError({
-      errorType: "RequestConflictError",
-      message: `This action: ${documentStatus} is already taken by the admin`,
-    });
+    throw ApiError.conflict(
+      `This action: ${documentStatus} is already taken by the admin`,
+      {
+        slug: "REQUEST_CONFLICT",
+      }
+    );
   }
 
   return documentStatus;

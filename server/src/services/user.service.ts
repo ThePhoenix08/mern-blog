@@ -1,9 +1,9 @@
-import { IUser } from "models/user.model";
-import { IBlogger } from "models/blogger.model";
-import { IFile, uploadFiles } from "./common.service";
-import ApiError from "utils/ApiError.util";
-import AuthRequest from "types/express";
-import { Document } from "mongoose";
+import type { IBlogger } from "@models/blogger.model";
+import type { IUser } from "@models/user.model";
+import type AuthRequest from "types/express";
+import type { IFile } from "./common.service";
+import { uploadFiles } from "./common.service";
+import ApiError from "@utils/ApiError.util";
 
 export interface FileRequest extends AuthRequest {
   files?: { [key: string]: Express.Multer.File[] };
@@ -24,9 +24,8 @@ export async function handleRequestFilesUpload(
   let files: IFile[] = [];
   if (isBlogger && req.files) {
     if (!req.files.avatar?.[0] || !req.files.coverImage?.[0])
-      throw new ApiError({
-        errorType: "RequestUndefinedError",
-        message: "Missing required files",
+      throw ApiError.badRequest("Missing required files", {
+        slug: "REQUEST_ERROR",
       });
 
     files.push({
@@ -63,9 +62,8 @@ export async function handleRequestFilesUpload(
         break;
 
       default:
-        throw new ApiError({
-          errorType: "UploadError",
-          message: "Unknown file identifier",
+        throw ApiError.internal("Unknown file identifier", {
+          slug: "UPLOAD_ERROR",
         });
     }
   });
@@ -81,9 +79,8 @@ export async function handleSingleFileUpload(
   const propName = identifier === "avatars" ? "avatar" : "coverImage";
 
   if (!req.user)
-    throw new ApiError({
-      errorType: "RequestUndefinedError",
-      message: "Request undefined",
+    throw ApiError.badRequest("Request undefined", {
+      slug: "REQUEST_ERROR",
     });
 
   const old_url = (req.user as UserWithOptionalBloggerFields)[propName] || null;
@@ -100,10 +97,12 @@ export async function handleSingleFileUpload(
 
   const uploadedFile = await uploadFiles([file]);
   if (!uploadedFile || !uploadedFile[0] || !uploadedFile[0].url)
-    throw new ApiError({
-      errorType: "UploadError",
-      message: "Error while uploading file, recieved null, url missing",
-    });
+    throw ApiError.internal(
+      "Error while uploading file, recieved null, url missing",
+      {
+        slug: "UPLOAD_ERROR",
+      }
+    );
 
   return uploadedFile[0].url;
 }

@@ -1,28 +1,31 @@
-import mongoose, { Schema, Document, Model, Types } from "mongoose";
+import { Schema, Model, Types } from "mongoose";
 import User, { IUser } from "./user.model";
-import { IBlog } from "./blog.model";
-const id = Types.ObjectId;
 
 export interface IBlogger extends IUser {
-  blogsByMe: Types.ObjectId[];
   totalSubscribers: number;
+
+  coverImage?: string;
   socialLinks: {
     facebook?: string;
     twitter?: string;
     linkedin?: string;
   };
-  coverImage?: string;
+
+  blogsByMe: Types.ObjectId[];
 }
 
 const bloggerSchema: Schema<IBlogger> = new Schema(
   {
+    // totalSubscribers: { type: Number, default: 0 }, virtual
+
     coverImage: { type: String },
-    // totalSubscribers: { type: Number, default: 0 },
     socialLinks: {
       facebook: { type: String, default: "" },
       twitter: { type: String, default: "" },
       linkedin: { type: String, default: "" },
     },
+
+    // blogsByMe: [{ type: id, ref: "Blog" }], virtual
   },
   {
     toJSON: { virtuals: true },

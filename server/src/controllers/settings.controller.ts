@@ -1,11 +1,11 @@
-import { IUser } from "models/user.model";
+import type { IUser } from "@models/user.model";
 import {
   getUserFromRequest,
   updateDocumentById,
   validateZodSchema,
-} from "services/common.service";
-import asyncHandler from "utils/asyncHandler.util";
-import { updateSettingsSchema } from "validators/settings.validator";
+} from "@services/common.service";
+import asyncHandler from "@utils/asyncHandler.util";
+import { updateSettingsSchema } from "@validators/settings.validator";
 
 const getUserSettings = asyncHandler(async (req, res) => {
   const { userSettings } = await getUserFromRequest(req);

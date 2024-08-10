@@ -1,36 +1,32 @@
-import asyncHandler from "utils/asyncHandler.util";
-import AuthRequest from "types/express";
-import { Response } from "express";
-import { getUserFromRequest, validateZodSchema } from "services/common.service";
+import type AuthRequest from "types/express";
+import type { Response } from "express";
+import type { FilterQuery, Model } from "mongoose";
+
+import {
+  getUserFromRequest,
+  validateZodSchema,
+} from "@services/common.service";
+import {
+  AnalyticsOptions,
+  AnalyticsService,
+} from "@services/dashboard.service";
 import {
   getAnalyticsOptionsSchema,
   getBloggerSpecificAnalyticsSchema,
   getSpecificAnalyticsSchema,
   getTopPerformersOptionsSchema,
-} from "validators/dashboard.validator";
-import { AnalyticsOptions, AnalyticsService } from "services/dashboard.service";
-import Blog from "models/blog.model";
-import Blogger from "models/blogger.model";
-import Notif from "models/notif.model";
-import User from "models/user.model";
-import Comment from "models/comment.model";
-import Report from "models/report.model";
-import { FilterQuery, Model } from "mongoose";
-import ApiResponse from "utils/ApiResponse.util";
-import ApiError from "utils/ApiError.util";
+} from "@validators/dashboard.validator";
 
-/* 
-  /dashboard
-    /admin
-      /overview GET -> getAdminOverview
-      /users GET -> getUserAnalytics
-      /blogs GET -> getBlogAnalytics
-      /comments GET -> getCommentAnalytics
-    /blogger
-      /overview GET -> getBloggerOverview
-      /blogs GET -> getBloggerBlogAnalytics
-      /comments GET -> getBloggerCommentAnalytics
-*/
+import Blog from "@models/blog.model";
+import Blogger from "@models/blogger.model";
+import Notif from "@models/notif.model";
+import User from "@models/user.model";
+import Comment from "@models/comment.model";
+import Report from "@models/report.model";
+
+import asyncHandler from "@utils/asyncHandler.util";
+import ApiResponse from "@utils/ApiResponse.util";
+import ApiError from "@utils/ApiError.util";
 
 const analyticsService = new AnalyticsService();
 
@@ -77,6 +73,8 @@ export const getAdminTotals = asyncHandler(
 
     const totalMetrics: Record<string, number> = {};
     totals.forEach((total, index) => {
+      if (!MODELS[index])
+        throw ApiError.internal("Invalid model", { slug: "INVALID_MODEL" });
       totalMetrics[MODELS[index].modelName] = total;
     });
 
@@ -106,6 +104,8 @@ export const getAdminMetricsOverTime = asyncHandler(
 
     const metricsOverTime: Record<string, metricsArray> = {};
     metrics.forEach((metric, index) => {
+      if (!MODELS[index])
+        throw ApiError.internal("Invalid model", { slug: "INVALID_MODEL" });
       metricsOverTime[MODELS[index].modelName] = metric;
     });
 
@@ -135,6 +135,8 @@ export const getAdminGrowthRates = asyncHandler(
 
     const growthRates: Record<string, growthRatesArray> = {};
     growthRatesArray.forEach((metric, index) => {
+      if (!MODELS[index])
+        throw ApiError.internal("Invalid model", { slug: "INVALID_MODEL" });
       growthRates[MODELS[index].modelName] = metric;
     });
 
@@ -180,7 +182,7 @@ export const getAdminTopPerformers = asyncHandler(
 );
 
 export const getTopPerformersOptions = asyncHandler(
-  async (req: AuthRequest, res: Response) => {
+  async (_req: AuthRequest, res: Response) => {
     const TopPerformersOptions = [
       {
         entity: "blog",
@@ -231,11 +233,9 @@ export const getSpecificAnalytics = asyncHandler(
     );
 
     const model: Model<any> = Models[entity];
-    if (!Model) {
-      throw new ApiError({
-        statusCode: 400,
-        message: "Invalid entity",
-        errorType: "AnalyticsError",
+    if (!model) {
+      throw ApiError.badRequest("Invalid model's analytics requested", {
+        slug: "INVALID_MODEL_ENTITY",
       });
     }
 
@@ -268,12 +268,12 @@ export const getSpecificAnalytics = asyncHandler(
         break;
       }
       default: {
-        throw new ApiError({
-          statusCode: 400,
-          message: "Invalid type of specific analytics",
-          errorType: "AnalyticsError",
-        });
-        break;
+        throw ApiError.badRequest(
+          "Invalid 'type' of specific analytics requested",
+          {
+            slug: "INVALID_ANALYTICS_TYPE",
+          }
+        );
       }
     }
 
@@ -294,11 +294,9 @@ export const getBloggerSpecificAnalytics = asyncHandler(
     const user = await getUserFromRequest(req);
 
     const model: Model<any> = Models[entity];
-    if (!Model) {
-      throw new ApiError({
-        statusCode: 400,
-        message: "Invalid entity",
-        errorType: "AnalyticsError",
+    if (!model) {
+      throw ApiError.badRequest("Invalid model's analytics requested", {
+        slug: "INVALID_MODEL_ENTITY",
       });
     }
 
@@ -320,12 +318,9 @@ export const getBloggerSpecificAnalytics = asyncHandler(
         break;
       }
       default: {
-        throw new ApiError({
-          statusCode: 400,
-          message: "Invalid entity",
-          errorType: "AnalyticsError",
+        throw ApiError.badRequest("Invalid model's analytics requested", {
+          slug: "INVALID_ENTITY",
         });
-        break;
       }
     }
 
@@ -364,11 +359,12 @@ export const getBloggerSpecificAnalytics = asyncHandler(
         break;
       }
       default: {
-        throw new ApiError({
-          statusCode: 400,
-          message: "Invalid type of specific analytics",
-          errorType: "AnalyticsError",
-        });
+        throw ApiError.badRequest(
+          "Invalid 'type' of specific analytics requested",
+          {
+            slug: "INVALID_ANALYTICS_TYPE",
+          }
+        );
       }
     }
 

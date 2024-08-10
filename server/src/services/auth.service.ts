@@ -1,7 +1,9 @@
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import User, { IUser } from "models/user.model";
-import AuthRequest from "types/express";
-import ApiError from "utils/ApiError.util";
+import type { IUser } from "@models/user.model";
+import type AuthRequest from "types/express";
+import User from "@models/user.model";
+import ApiError from "@utils/ApiError.util";
 import ENV_VARIABLES from "../constants";
 
 const checkIfUserExists = async (
@@ -11,9 +13,8 @@ const checkIfUserExists = async (
 ): Promise<IUser> => {
   const user = await User.findOne({ $or: [{ email }, { username }] }).lean();
   if (errorCheck && !user)
-    throw new ApiError({
-      errorType: "UserNotFoundError",
-      message: "User not found",
+    throw ApiError.notFound("User not found", {
+      slug: "USER_NOT_FOUND",
     });
   return user as IUser;
 };
@@ -21,15 +22,15 @@ const checkIfUserExists = async (
 const checkIfUserIsVerified = async (email: string): Promise<void> => {
   const user = await User.findOne({ email }).lean();
   if (!user)
-    throw new ApiError({
-      errorType: "UserNotFoundError",
-      message: "User not found",
+    throw ApiError.notFound("User not found", {
+      slug: "USER_NOT_FOUND",
     });
-  if (!user.isEmailVerified)
-    throw new ApiError({
-      errorType: "UserEmailNotVerifiedError",
-      message: "User email not verified",
-    });
+
+  // EMAIL VERIFICATION IS DISABLED FOR NOW
+  /* if (!user.isEmailVerified)
+    throw ApiError.unauthorized("User email not verified", {
+      slug: "USER_EMAIL_NOT_VERIFIED",
+    }); */
 };
 
 // TODO => get rid of any
@@ -37,26 +38,26 @@ const checkIfPasswordIsCorrect = async (
   userEnterPassword: string,
   user: IUser
 ) => {
-  const isCorrect = await user.isPasswordCorrect(userEnterPassword);
+  const isCorrect = await isPasswordCorrect(user.password, userEnterPassword);
   if (!isCorrect)
-    throw new ApiError({
-      errorType: "PasswordIncorrectError",
-      message: "Password incorrect",
+    throw ApiError.unauthorized("Password incorrect", {
+      slug: "PASSWORD_INCORRECT",
     });
 };
 
 const validateRequest = async (req: AuthRequest) => {
   if (!req.cookies && !req.body)
-    throw new ApiError({
-      errorType: "RequestUndefinedError",
-      message: "Request undefined",
+    throw ApiError.badRequest("Request doesnt not provide required data", {
+      slug: "REQUEST_INCOMPLETE",
     });
   const { refreshToken } = req.cookies || req.body;
   if (!refreshToken)
-    throw new ApiError({
-      errorType: "UnauthorizedRequestError",
-      message: "Unauthorized request",
-    });
+    throw ApiError.unauthorized(
+      "Unauthorized request, refresh token is missing",
+      {
+        slug: "UNAUTHORIZED_REQUEST",
+      }
+    );
   return refreshToken;
 };
 
@@ -71,23 +72,20 @@ const validateRefreshToken = async (
     ENV_VARIABLES.refreshTokenSecret as string
   );
   if (!decodedToken || typeof decodedToken !== "object" || !decodedToken._id) {
-    throw new ApiError({
-      errorType: "InvalidRefreshTokenError",
-      message: "Decoded token is invalid",
+    throw ApiError.unauthorized("Invalid refresh token, token is invalid", {
+      slug: "INVALID_REFRESH_TOKEN",
     });
   }
 
   const user = await User.findById(decodedToken._id);
   if (!user)
-    throw new ApiError({
-      errorType: "UserNotFoundError",
-      message: "Invalid refresh token, user not found",
+    throw ApiError.notFound("Invalid refresh token, user not found", {
+      slug: "USER_NOT_FOUND",
     });
 
   if (refreshToken !== user.refreshToken) {
-    throw new ApiError({
-      errorType: "TokenExpiredError",
-      message: "Refresh token is expired",
+    throw ApiError.unauthorized("Refresh token is expired", {
+      slug: "REFRESH_TOKEN_EXPIRED",
     });
   }
   return {
@@ -96,10 +94,39 @@ const validateRefreshToken = async (
   };
 };
 
+const generateAccessToken = async (user: IUser): Promise<string> => {
+  return jwt.sign(
+    { _id: user._id, email: user.email, role: user.role },
+    ENV_VARIABLES.accessTokenSecret as string,
+    {
+      expiresIn: ENV_VARIABLES.accessTokenExpiry,
+    }
+  );
+};
+
+const generateRefreshToken = async (user: IUser): Promise<string> => {
+  return jwt.sign(
+    { _id: user._id },
+    ENV_VARIABLES.refreshTokenSecret as string,
+    {
+      expiresIn: ENV_VARIABLES.refreshTokenExpiry,
+    }
+  );
+};
+
+const isPasswordCorrect = async (
+  userPassword: string,
+  userEnterPassword: string
+): Promise<boolean> => {
+  return bcrypt.compare(userEnterPassword, userPassword);
+};
+
 export {
   checkIfPasswordIsCorrect,
   checkIfUserExists,
   checkIfUserIsVerified,
+  generateAccessToken,
+  generateRefreshToken,
   validateRefreshToken,
   validateRequest,
 };

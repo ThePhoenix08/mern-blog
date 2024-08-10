@@ -1,9 +1,9 @@
-import Blog from "models/blog.model";
-import Comment from "models/comment.model";
-import Report from "models/report.model";
-import ENV_VARIABLES from "../constants";
 import cron from "node-cron";
-import Notif from "models/notif.model";
+import ENV_VARIABLES from "../constants";
+import Blog from "@models/blog.model";
+import Comment from "@models/comment.model";
+import Report from "@models/report.model";
+import Notif from "@models/notif.model";
 
 cron.schedule(ENV_VARIABLES.cronJobsInterval, async () => {
   console.log("Running cleanup job");
