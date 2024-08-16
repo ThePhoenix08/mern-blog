@@ -1,21 +1,25 @@
-import { Home, Search, Settings } from "lucide-react";
 import { Routes, Route } from "react-router-dom";
-import Moderation from "./pages/Auth/Admin/Moderation";
-import Dashboard from "./pages/Auth/Blogger/Dashboard";
-import Editor from "./pages/Auth/Blogger/Editor";
-import Explore from "./pages/Auth/Explore/Explore";
-import Feed from "./pages/Auth/Explore/Feed";
-import Trending from "./pages/Auth/Explore/Trending";
-import Content from "./pages/Auth/Profile/Content";
-import Notifications from "./pages/Auth/Profile/Notifications";
-import Profile from "./pages/Auth/Profile/Profile";
+import Moderation from "./pages/App/Admin/Moderation";
+import Dashboard from "./pages/App/Blogger/Dashboard";
+import Editor from "./pages/App/Blogger/Editor";
+import Explore from "./pages/App/Explore/Explore";
+import Feed from "./pages/App/Explore/Feed";
+import Trending from "./pages/App/Explore/Trending";
+import Content from "./pages/App/Profile/Content";
+import Notifications from "./pages/App/Profile/Notifications";
+import Profile from "./pages/App/Profile/Profile";
 import ForgotPassword from "./pages/public/ForgotPassword";
 import Login from "./pages/public/Login";
 import SignUp from "./pages/public/SignUp";
-import Admin from "./pages/Auth/Admin/Admin";
-import Blogger from "./pages/Auth/Blogger/Blogger";
-import B_Content from "./pages/Auth/Blogger/B_Content";
-import A_Dashboard from "./pages/Auth/Admin/A_Dashboard";
+import Admin from "./pages/App/Admin/Admin";
+import Blogger from "./pages/App/Blogger/Blogger";
+import B_Content from "./pages/App/Blogger/B_Content";
+import A_Dashboard from "./pages/App/Admin/A_Dashboard";
+import NotFound from "./pages/public/NotFound";
+import Home from "./pages/public/Home";
+import Search from "./pages/App/Explore/Search";
+import Settings from "./pages/App/Profile/Settings";
+import AppWrapper from "./pages/App/AppWrapper";
 
 function App() {
   const notFoundFallbackRoute = <Route path="*" element={<NotFound />} />;
@@ -25,14 +29,11 @@ function App() {
       <Routes>
         {/* public routes */}
         <Route path="/" element={<Home />} index />
-        <Route path="/public">
-          <Route path="home" element={<Home />} index />
-          <Route path="login" element={<Login />} />
-          <Route path="signup" element={<SignUp />} />
-          <Route path="forgot-password" element={<ForgotPassword />} />
-          {notFoundFallbackRoute}
-        </Route>
-        <Route path="/auth">
+        <Route path="home" element={<Home />} />
+        <Route path="login" element={<Login />} />
+        <Route path="signup" element={<SignUp />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
+        <Route path="/app" element={<AppWrapper />}>
           <Route path="explore" element={<Explore />}>
             <Route path="feed" element={<Feed />} />
             <Route path="trending" element={<Trending />} index />
