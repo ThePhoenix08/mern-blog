@@ -1,11 +1,14 @@
-import React from 'react'
+import { Outlet } from "react-router-dom";
 
-type Props = {}
+type Props = {};
 
 function Explore({}: Props) {
   return (
-    <div>Explore</div>
-  )
+    <div>
+      Explore
+      <Outlet />
+    </div>
+  );
 }
 
-export default Explore
+export default Explore;

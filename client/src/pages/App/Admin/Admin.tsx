@@ -1,9 +1,14 @@
-import React from "react";
+import { Outlet } from "react-router-dom";
 
 type Props = {};
 
 function Admin({}: Props) {
-  return <div>Admin</div>;
+  return (
+    <div>
+      Admin
+      <Outlet />
+    </div>
+  );
 }
 
 export default Admin;

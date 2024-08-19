@@ -1,11 +1,14 @@
-import React from 'react'
+import { Outlet } from "react-router-dom";
 
-type Props = {}
+type Props = {};
 
 function Profile({}: Props) {
   return (
-    <div>Profile</div>
-  )
+    <div>
+      Profile
+      <Outlet />
+    </div>
+  );
 }
 
-export default Profile
+export default Profile;

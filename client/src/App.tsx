@@ -22,44 +22,48 @@ import Settings from "./pages/App/Profile/Settings";
 import AppWrapper from "./pages/App/AppWrapper";
 
 function App() {
-  const notFoundFallbackRoute = <Route path="*" element={<NotFound />} />;
+  const notFoundFallbackRoute = (fallback: string) => (
+    <Route path="*" element={<NotFound fallback={fallback} />} />
+  );
 
   return (
     <div className="App">
       <Routes>
-        {/* public routes */}
+        {/* Public Routes */}
         <Route path="/" element={<Home />} index />
         <Route path="home" element={<Home />} />
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<SignUp />} />
         <Route path="forgot-password" element={<ForgotPassword />} />
+
+        {/* Authenticated Routes */}
         <Route path="/app" element={<AppWrapper />}>
           <Route path="explore" element={<Explore />}>
             <Route path="feed" element={<Feed />} />
             <Route path="trending" element={<Trending />} index />
             <Route path="search" element={<Search />} />
-            {notFoundFallbackRoute}
+            {notFoundFallbackRoute("/app/explore")}
           </Route>
           <Route path="profile" element={<Profile />}>
             <Route path="settings" element={<Settings />} />
             <Route path="notifications" element={<Notifications />} />
             <Route path="content" element={<Content />} />
-            {notFoundFallbackRoute}
+            {notFoundFallbackRoute("/app/profile")}
           </Route>
           <Route path="blogger" element={<Blogger />}>
             <Route path="content" element={<B_Content />} />
             <Route path="edit-content" element={<Editor />} />
-            <Route path="analytics" element={<Dashboard />} index />
-            {notFoundFallbackRoute}
+            <Route path="analytics" element={<Dashboard />} />
+            {notFoundFallbackRoute("/app/blogger")}
           </Route>
           <Route path="admin" element={<Admin />}>
             <Route path="analytics" element={<A_Dashboard />} />
             <Route path="moderation" element={<Moderation />} />
-            {notFoundFallbackRoute}
+            {notFoundFallbackRoute("/app/admin")}
           </Route>
-          {notFoundFallbackRoute}
+          {notFoundFallbackRoute("/app")}
         </Route>
-        {notFoundFallbackRoute}
+        {notFoundFallbackRoute("/")}
       </Routes>
     </div>
   );
