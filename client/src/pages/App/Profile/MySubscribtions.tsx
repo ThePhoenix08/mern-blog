@@ -1,8 +1,6 @@
 import React from "react";
 
-type Props = {};
-
-const MySubscribtions = (props: Props) => {
+const MySubscribtions = () => {
   return <div>MySubscribtions</div>;
 };
 

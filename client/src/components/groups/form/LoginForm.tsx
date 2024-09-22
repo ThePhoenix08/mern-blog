@@ -1,52 +1,16 @@
 import React, { useState } from "react";
-import { z } from "zod";
-import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
-import LoadingButton from "@mui/lab/LoadingButton";
 import { cn } from "@/lib/utils";
-import ToggleButton from "@mui/material/ToggleButton";
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-import { regexErrorMessages, regexPatterns } from "./common"
+import TextField from "@mui/material/TextField";
+import { z } from "zod";
+import Button from "@mui/material/Button/Button";
+import LoadingButton from "@mui/lab/LoadingButton/LoadingButton";
+import { regexPatterns, regexErrorMessages } from "./common";
 
-const formSchema = z
-  .object({
-    username: z
-      .string()
-      .min(2, regexErrorMessages.UsernameMinLength)
-      .regex(regexPatterns.noSymbol, regexErrorMessages.noSymbol),
-    email: z.string().email(regexErrorMessages.validEmail),
-    fullName: z
-      .string()
-      .min(2, regexErrorMessages.FullNameMinLength)
-      .regex(/^[a-zA-Z\s]*$/, "No symbols or digits allowed in full name"),
-    password: z
-      .string()
-      .min(8)
-      .regex(regexPatterns.hasUppercase, regexErrorMessages.hasUppercase)
-      .regex(regexPatterns.hasLowercase, regexErrorMessages.hasLowercase)
-      .regex(regexPatterns.hasDigit, regexErrorMessages.hasDigit)
-      .regex(regexPatterns.hasSymbol, regexErrorMessages.hasSymbol)
-      .regex(
-        regexPatterns.noSymbolExceptPermittedOnes,
-        regexErrorMessages.noSymbolExceptPermittedOnes
-      ),
-    confirmPassword: z
-      .string()
-      .min(8)
-      .regex(regexPatterns.hasUppercase, regexErrorMessages.hasUppercase)
-      .regex(regexPatterns.hasLowercase, regexErrorMessages.hasLowercase)
-      .regex(regexPatterns.hasDigit, regexErrorMessages.hasDigit)
-      .regex(regexPatterns.hasSymbol, regexErrorMessages.hasSymbol)
-      .regex(
-        regexPatterns.noSymbolExceptPermittedOnes,
-        regexErrorMessages.noSymbolExceptPermittedOnes
-      ),
-    role: z.enum(["user", "blogger"]),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
+const FORMDATABLUEPRINT = {
+  username: "",
+  email: "",
+  password: "",
+};
 
 const CHECKSTATEBLUEPRINT: {
   [key: string]: { name: keyof typeof regexPatterns; state: boolean }[];
@@ -54,11 +18,6 @@ const CHECKSTATEBLUEPRINT: {
   username: [
     { name: "noSymbol", state: false },
     { name: "UsernameMinLength", state: false },
-  ],
-  fullName: [
-    { name: "noSymbol", state: false },
-    { name: "noDigit", state: false },
-    { name: "FullNameMinLength", state: false },
   ],
   email: [{ name: "validEmail", state: false }],
   password: [
@@ -69,41 +28,44 @@ const CHECKSTATEBLUEPRINT: {
     { name: "PasswordMinLength", state: false },
     { name: "noSymbolExceptPermittedOnes", state: false }, // @ and _
   ],
-  confirmPassword: [
-    { name: "hasUppercase", state: false },
-    { name: "hasLowercase", state: false },
-    { name: "hasDigit", state: false },
-    { name: "hasSymbol", state: false },
-    { name: "PasswordMinLength", state: false },
-    { name: "noSymbolExceptPermittedOnes", state: false }, // @ and _
-  ],
 };
 
-const FORMDATABLUEPRINT = {
-  username: "",
-  fullName: "",
-  email: "",
-  password: "",
-  confirmPassword: "",
-  role: "user",
-};
+const formSchema = z.object({
+  username: z
+    .string()
+    .min(2, regexErrorMessages.UsernameMinLength)
+    .regex(regexPatterns.noSymbol, regexErrorMessages.noSymbol),
+  email: z.string().email(regexErrorMessages.validEmail),
+  password: z
+    .string()
+    .min(8, regexErrorMessages.PasswordMinLength)
+    .regex(regexPatterns.hasUppercase, regexErrorMessages.hasUppercase)
+    .regex(regexPatterns.hasLowercase, regexErrorMessages.hasLowercase)
+    .regex(regexPatterns.hasDigit, regexErrorMessages.hasDigit)
+    .regex(regexPatterns.hasSymbol, regexErrorMessages.hasSymbol)
+    .regex(
+      regexPatterns.noSymbolExceptPermittedOnes,
+      regexErrorMessages.noSymbolExceptPermittedOnes
+    ),
+});
 
-const SignUpForm = ({ styleClasses }: { styleClasses: string }) => {
+const LoginForm = ({ styleClasses }: { styleClasses: string }) => {
   const [formState, setFormState] = useState(FORMDATABLUEPRINT);
   const [checks, setChecks] = useState(CHECKSTATEBLUEPRINT);
   const [errorMessages, setErrorMessages] =
     useState<Partial<typeof FORMDATABLUEPRINT>>(FORMDATABLUEPRINT);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // methods
   const formRealtimeChecker = (
     fieldName: keyof typeof FORMDATABLUEPRINT,
     value: string
   ) => {
     const checkers = checks[fieldName];
     checkers.forEach((checker, index) => {
+      const checkResult = regexPatterns[checker.name].test(value);
       setChecks((prevState) => {
         const newState = { ...prevState };
-        const checkResult = regexPatterns[checker.name].test(value);
         newState[fieldName][index].state = checkResult;
         setErrorMessages((EprevState) => {
           const EnewState = { ...EprevState };
@@ -120,7 +82,7 @@ const SignUpForm = ({ styleClasses }: { styleClasses: string }) => {
       });
     });
   };
-  const formDataValidator = () => {
+  const formDataValidator = (): boolean => {
     const validationResult = formSchema.safeParse(formState);
     if (validationResult.success) {
       return true;
@@ -128,13 +90,9 @@ const SignUpForm = ({ styleClasses }: { styleClasses: string }) => {
       const formattedErrors = validationResult.error.format();
       setErrorMessages({
         username: formattedErrors.username?._errors[0] || "",
-        fullName: formattedErrors.fullName?._errors[0] || "",
         email: formattedErrors.email?._errors[0] || "",
         password: formattedErrors.password?._errors[0] || "",
-        confirmPassword: formattedErrors.confirmPassword?._errors[0] || "",
-        role: formattedErrors.role?._errors[0] || "",
       });
-
       return false;
     }
   };
@@ -143,29 +101,25 @@ const SignUpForm = ({ styleClasses }: { styleClasses: string }) => {
     setIsSubmitting(true);
 
     if (formDataValidator()) {
-      // REQUEST => send data to server
+      // REQUEST => send cookies to server
       // RESPONSE => check if request was successful
       console.log("Form submitted successfully", formState);
-      // ENDPOINT => /api/public/register
+      // ENDPOINT => /api/public/login
+
       // Login user
       // Redirect to app
       setErrorMessages(FORMDATABLUEPRINT);
       setChecks(CHECKSTATEBLUEPRINT);
     }
-
     setIsSubmitting(false);
   };
-  const onChangeHandler = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setFormState((prevState) => ({
       ...prevState,
       [name as keyof typeof FORMDATABLUEPRINT]: value,
     }));
-    if (name !== "role") {
-      formRealtimeChecker(name as keyof typeof FORMDATABLUEPRINT, value);
-    }
+    formRealtimeChecker(name as keyof typeof FORMDATABLUEPRINT, value);
   };
   const onResetHandler = () => {
     setFormState(FORMDATABLUEPRINT);
@@ -191,15 +145,6 @@ const SignUpForm = ({ styleClasses }: { styleClasses: string }) => {
           errorMessage={errorMessages?.username}
         />
         <FormControl
-          fieldName="fullName"
-          label="Full Name"
-          type="text"
-          placeholder="John Doe"
-          value={formState.fullName}
-          onChangeHandler={onChangeHandler}
-          errorMessage={errorMessages?.fullName}
-        />
-        <FormControl
           fieldName="email"
           label="Email Address"
           type="text"
@@ -217,33 +162,6 @@ const SignUpForm = ({ styleClasses }: { styleClasses: string }) => {
           onChangeHandler={onChangeHandler}
           errorMessage={errorMessages?.password}
         />
-        <FormControl
-          fieldName="confirmPassword"
-          label="Confirm Password"
-          type="password"
-          placeholder=""
-          value={formState.confirmPassword}
-          onChangeHandler={onChangeHandler}
-          errorMessage={errorMessages?.confirmPassword}
-        />
-        <div className="roleSelectField grid place-items-center">
-          <ToggleButtonGroup
-            color="primary"
-            value={formState.role}
-            exclusive
-            fullWidth
-            onChange={(_e, value) => {
-              setFormState((prevState) => ({
-                ...prevState,
-                role: value,
-              }));
-            }}
-            aria-label="role selection"
-          >
-            <ToggleButton value="user">User</ToggleButton>
-            <ToggleButton value="blogger">Blogger</ToggleButton>
-          </ToggleButtonGroup>
-        </div>
         <div className="flex gap-4 justify-around">
           <LoadingButton
             loading={isSubmitting}
@@ -281,7 +199,7 @@ const FormControl: React.FC<{
   onChangeHandler,
   errorMessage,
 }) => {
-  const id = `signup-${fieldName}`;
+  const id = `login-${fieldName}`;
 
   return (
     <div className="form-control">
@@ -304,4 +222,4 @@ const FormControl: React.FC<{
   );
 };
 
-export default SignUpForm;
+export default LoginForm;

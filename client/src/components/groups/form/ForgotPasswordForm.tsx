@@ -1,27 +1,25 @@
 import React, { useState } from "react";
+import {
+  regexErrorMessages,
+  regexPatterns,
+} from "@/components/groups/form/common";
 import { z } from "zod";
-import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
-import LoadingButton from "@mui/lab/LoadingButton";
 import { cn } from "@/lib/utils";
-import ToggleButton from "@mui/material/ToggleButton";
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-import { regexErrorMessages, regexPatterns } from "./common"
+import TextField from "@mui/material/TextField/TextField";
+import LoadingButton from "@mui/lab/LoadingButton/LoadingButton";
+import Button from "@mui/material/Button/Button";
+import { useNavigate } from "react-router-dom";
+
+const FORMDATABLUEPRINT = {
+  password: "",
+  confirmPassword: "",
+};
 
 const formSchema = z
   .object({
-    username: z
-      .string()
-      .min(2, regexErrorMessages.UsernameMinLength)
-      .regex(regexPatterns.noSymbol, regexErrorMessages.noSymbol),
-    email: z.string().email(regexErrorMessages.validEmail),
-    fullName: z
-      .string()
-      .min(2, regexErrorMessages.FullNameMinLength)
-      .regex(/^[a-zA-Z\s]*$/, "No symbols or digits allowed in full name"),
     password: z
       .string()
-      .min(8)
+      .min(8, regexErrorMessages.PasswordMinLength)
       .regex(regexPatterns.hasUppercase, regexErrorMessages.hasUppercase)
       .regex(regexPatterns.hasLowercase, regexErrorMessages.hasLowercase)
       .regex(regexPatterns.hasDigit, regexErrorMessages.hasDigit)
@@ -32,7 +30,7 @@ const formSchema = z
       ),
     confirmPassword: z
       .string()
-      .min(8)
+      .min(8, regexErrorMessages.PasswordMinLength)
       .regex(regexPatterns.hasUppercase, regexErrorMessages.hasUppercase)
       .regex(regexPatterns.hasLowercase, regexErrorMessages.hasLowercase)
       .regex(regexPatterns.hasDigit, regexErrorMessages.hasDigit)
@@ -41,7 +39,6 @@ const formSchema = z
         regexPatterns.noSymbolExceptPermittedOnes,
         regexErrorMessages.noSymbolExceptPermittedOnes
       ),
-    role: z.enum(["user", "blogger"]),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -51,16 +48,6 @@ const formSchema = z
 const CHECKSTATEBLUEPRINT: {
   [key: string]: { name: keyof typeof regexPatterns; state: boolean }[];
 } = {
-  username: [
-    { name: "noSymbol", state: false },
-    { name: "UsernameMinLength", state: false },
-  ],
-  fullName: [
-    { name: "noSymbol", state: false },
-    { name: "noDigit", state: false },
-    { name: "FullNameMinLength", state: false },
-  ],
-  email: [{ name: "validEmail", state: false }],
   password: [
     { name: "hasUppercase", state: false },
     { name: "hasLowercase", state: false },
@@ -79,21 +66,13 @@ const CHECKSTATEBLUEPRINT: {
   ],
 };
 
-const FORMDATABLUEPRINT = {
-  username: "",
-  fullName: "",
-  email: "",
-  password: "",
-  confirmPassword: "",
-  role: "user",
-};
-
-const SignUpForm = ({ styleClasses }: { styleClasses: string }) => {
+const ForgotPasswordForm = ({ styleClasses }: { styleClasses?: string }) => {
   const [formState, setFormState] = useState(FORMDATABLUEPRINT);
   const [checks, setChecks] = useState(CHECKSTATEBLUEPRINT);
   const [errorMessages, setErrorMessages] =
     useState<Partial<typeof FORMDATABLUEPRINT>>(FORMDATABLUEPRINT);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const formRealtimeChecker = (
     fieldName: keyof typeof FORMDATABLUEPRINT,
@@ -101,9 +80,9 @@ const SignUpForm = ({ styleClasses }: { styleClasses: string }) => {
   ) => {
     const checkers = checks[fieldName];
     checkers.forEach((checker, index) => {
+      const checkResult = regexPatterns[checker.name].test(value);
       setChecks((prevState) => {
         const newState = { ...prevState };
-        const checkResult = regexPatterns[checker.name].test(value);
         newState[fieldName][index].state = checkResult;
         setErrorMessages((EprevState) => {
           const EnewState = { ...EprevState };
@@ -120,21 +99,16 @@ const SignUpForm = ({ styleClasses }: { styleClasses: string }) => {
       });
     });
   };
-  const formDataValidator = () => {
+  const formDataValidator = (): boolean => {
     const validationResult = formSchema.safeParse(formState);
     if (validationResult.success) {
       return true;
     } else {
       const formattedErrors = validationResult.error.format();
       setErrorMessages({
-        username: formattedErrors.username?._errors[0] || "",
-        fullName: formattedErrors.fullName?._errors[0] || "",
-        email: formattedErrors.email?._errors[0] || "",
         password: formattedErrors.password?._errors[0] || "",
         confirmPassword: formattedErrors.confirmPassword?._errors[0] || "",
-        role: formattedErrors.role?._errors[0] || "",
       });
-
       return false;
     }
   };
@@ -146,26 +120,24 @@ const SignUpForm = ({ styleClasses }: { styleClasses: string }) => {
       // REQUEST => send data to server
       // RESPONSE => check if request was successful
       console.log("Form submitted successfully", formState);
-      // ENDPOINT => /api/public/register
-      // Login user
-      // Redirect to app
+      // ENDPOINT => /api/public/forgotPassword/new
       setErrorMessages(FORMDATABLUEPRINT);
       setChecks(CHECKSTATEBLUEPRINT);
+      // NAVIGATE TO => /login
+      navigate("/login");
     }
-
     setIsSubmitting(false);
   };
-  const onChangeHandler = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = event.target;
+  const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target as {
+      name: keyof typeof FORMDATABLUEPRINT;
+      value: string;
+    };
     setFormState((prevState) => ({
       ...prevState,
-      [name as keyof typeof FORMDATABLUEPRINT]: value,
+      [name]: value,
     }));
-    if (name !== "role") {
-      formRealtimeChecker(name as keyof typeof FORMDATABLUEPRINT, value);
-    }
+    formRealtimeChecker(name, value);
   };
   const onResetHandler = () => {
     setFormState(FORMDATABLUEPRINT);
@@ -175,39 +147,25 @@ const SignUpForm = ({ styleClasses }: { styleClasses: string }) => {
   };
 
   return (
-    <div className={cn("flex-container", styleClasses)}>
+    <div className={cn("flex-container flex flex-col gap-4", styleClasses)}>
+      <div className="heading-text flex flex-col gap-2">
+        <p className="text-center text-3xl font-bold">Set New Password</p>
+        <p className="text-left text-sm text-zinc-700">
+          At least 8 characters long <br />
+          Must contain at least the following: <br />
+          <ul className="list-disc list-inside">
+            <li>One uppercase letter</li>
+            <li>One lowercase letter.</li>
+            <li>One digit.</li>
+            <li>One symbol, either @ or _.</li>
+          </ul>
+        </p>
+      </div>
       <form
         onSubmit={onSubmitHandler}
         onReset={onResetHandler}
         className="form flex flex-col gap-4"
       >
-        <FormControl
-          fieldName="username"
-          label="Username"
-          type="text"
-          placeholder="JohnDoe08"
-          value={formState.username}
-          onChangeHandler={onChangeHandler}
-          errorMessage={errorMessages?.username}
-        />
-        <FormControl
-          fieldName="fullName"
-          label="Full Name"
-          type="text"
-          placeholder="John Doe"
-          value={formState.fullName}
-          onChangeHandler={onChangeHandler}
-          errorMessage={errorMessages?.fullName}
-        />
-        <FormControl
-          fieldName="email"
-          label="Email Address"
-          type="text"
-          placeholder="johndoe@gmail.com"
-          value={formState.email}
-          onChangeHandler={onChangeHandler}
-          errorMessage={errorMessages?.email}
-        />
         <FormControl
           fieldName="password"
           label="Password"
@@ -226,35 +184,20 @@ const SignUpForm = ({ styleClasses }: { styleClasses: string }) => {
           onChangeHandler={onChangeHandler}
           errorMessage={errorMessages?.confirmPassword}
         />
-        <div className="roleSelectField grid place-items-center">
-          <ToggleButtonGroup
-            color="primary"
-            value={formState.role}
-            exclusive
-            fullWidth
-            onChange={(_e, value) => {
-              setFormState((prevState) => ({
-                ...prevState,
-                role: value,
-              }));
-            }}
-            aria-label="role selection"
-          >
-            <ToggleButton value="user">User</ToggleButton>
-            <ToggleButton value="blogger">Blogger</ToggleButton>
-          </ToggleButtonGroup>
-        </div>
         <div className="flex gap-4 justify-around">
           <LoadingButton
             loading={isSubmitting}
             variant="contained"
             type="submit"
-            size="large"
           >
-            Submit
+            Reset Password
           </LoadingButton>
-          <Button type="reset" variant="outlined" size="large">
-            Reset
+          <Button
+            type="button"
+            variant="outlined"
+            onClick={() => navigate("/login")}
+          >
+            Back to log in
           </Button>
         </div>
       </form>
@@ -281,7 +224,7 @@ const FormControl: React.FC<{
   onChangeHandler,
   errorMessage,
 }) => {
-  const id = `signup-${fieldName}`;
+  const id = `forgotPassword-${fieldName}`;
 
   return (
     <div className="form-control">
@@ -304,4 +247,4 @@ const FormControl: React.FC<{
   );
 };
 
-export default SignUpForm;
+export default ForgotPasswordForm;

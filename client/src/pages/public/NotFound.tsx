@@ -1,7 +1,6 @@
 import PageNotFoundImg from "../../assets/svgs/NotFound404.svg";
 
-function NotFound({ fallback }: { fallback: string }) {
-  console.log(fallback);
+function NotFound({ fallback }: { fallback?: string }) {
   const fallbackPath = fallback ? fallback : "/";
 
   return (
@@ -11,14 +10,14 @@ function NotFound({ fallback }: { fallback: string }) {
         alt="404 Page Not Found"
         className="w-11/12 md:w-1/2 h-auto"
       />
-      <p className="text-3xl text-sky-500 font-semibold">
+      <p className="text-3xl text-indigo-700 font-semibold">
         Oops! Page not found
       </p>
-      <p className="text-2xl text-sky-800 font-semibold">
+      <p className="text-2xl text-indigo-600 font-semibold">
         We are sorry, but the page you are looking for does not exist.
       </p>
       <a href={fallbackPath}>
-        <button className="bg-sky-500 text-white px-4 py-2 rounded-lg">
+        <button className="bg-indigo-500 text-white px-4 py-2 rounded-lg">
           Go to Home
         </button>
       </a>

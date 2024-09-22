@@ -1,11 +1,7 @@
 import React from 'react'
 
-type Props = {}
+const A_Dashboard = () => {
+  return <div>A_Dashboard</div>;
+};
 
-function Dashboard({}: Props) {
-  return (
-    <div>Dashboard</div>
-  )
-}
-
-export default Dashboard
+export default A_Dashboard;
