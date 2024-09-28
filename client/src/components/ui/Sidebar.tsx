@@ -1,5 +1,4 @@
 import React, { useState, createContext, useContext } from "react";
-import logoSVG from "@/assets/svgs/logo.svg";
 
 // logos
 import {
@@ -22,7 +21,7 @@ import { IoIosClose } from "react-icons/io"; // close
 import { RoleEnum } from "@/lib/common_data.util";
 import Divider from "@mui/material/Divider/Divider";
 import { Link, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/classMerge.util";
 import Logo from "../brand/Logo";
 
 type listItemsEnum =
@@ -39,154 +38,18 @@ type listItemsEnum =
   | "Reader";
 
 const locationToListItemMap: Record<string, listItemsEnum> = {
-  explore: "Explore",
-  saves: "My Saved",
-  subscribtions: "My Subscribtions",
-  notifications: "Messages",
-  "my-blogs": "My Blogs",
-  analytics: "Dashboard",
-  settings: "Settings",
-  login: "Logout",
-  moderation: "Moderation",
-  editor: "Editor",
-  reader: "Reader",
+  "/app/explore": "Explore",
+  "/app/profile/saves": "My Saved",
+  "/app/profile/subscribtions": "My Subscribtions",
+  "/app/profile/notifications": "Messages",
+  "/app/blogger/my-blogs": "My Blogs",
+  "/app/admin/analytics": "Dashboard",
+  "/app/settings": "Settings",
+  "/app/login": "Logout",
+  "/app/admin/moderation": "Moderation",
+  "/app/blogger/editor": "Editor",
+  "/app/reader": "Reader",
 };
-
-/* const Sidebar = () => {
-  const [role, setRole] = useState<RoleEnum>("blogger");
-  let { pathname } = useLocation();
-  const pathSegment = pathname.split("/").pop() as string;
-  const [activeListItem, setActiveListItem] = useState<listItemsEnum>(
-    locationToListItemMap[pathSegment]
-  );
-
-  const [isMinimized, setIsMinimized] = useState(true);
-
-  // nested component
-  const ListItemBox = ({
-    icon,
-    text,
-    link,
-  }: {
-    icon: JSX.Element;
-    text: listItemsEnum;
-    link: string;
-  }) => {
-    const handleListItemClick = (text: listItemsEnum) => {
-      setActiveListItem(text);
-    };
-
-    return (
-      <li
-        className="menu-link w-full"
-        onClick={() => handleListItemClick(text)}
-      >
-        <Link
-          to={link}
-          className={cn(
-            "menu-link w-full flex items-center p-4",
-            `${activeListItem === text ? "bg-blue-marguerite-500 text-babyPowder" : "hover:bg-blue-marguerite-200"}`
-          )}
-        >
-          <div
-            className={cn(
-              "w-5 h-5 lg:w-8 lg:h-8 sm:text-xl md:text-2xl lg:text-3xl grid place-items-center",
-              "text-blue-marguerite-400",
-              `${activeListItem === text && "text-babyPowder"}`
-            )}
-          >
-            {icon}
-          </div>
-          <div className={`ml-2 ${isMinimized ? "hidden" : ""}`}>{text}</div>
-        </Link>
-      </li>
-    );
-  };
-
-  return (
-    <div
-      className={`sidebar-container max-w-96 lg:w-1/4 h-screen bg-gray-200 ${isMinimized ? "sm:max-w-fit" : ""}`}
-    >
-      <div className="logo-container">
-        <Logo />
-      </div>
-      <div className="burger-container">
-        <div className="burger-line"></div>
-        <div className="burger-line"></div>
-        <div className="burger-line"></div>
-      </div>
-      <nav className="menu-container">
-        <ul>
-          <ListItemBox
-            icon={<MdExplore />}
-            text="Explore"
-            link="/app/explore"
-          />
-          <ListItemBox
-            icon={<MdOutlineBookmark />}
-            text="My Saved"
-            link="/app/profile/saves"
-          />
-          <ListItemBox
-            icon={<MdLibraryAddCheck />}
-            text="My Subscribtions"
-            link="/app/profile/subscribtions"
-          />
-          <ListItemBox
-            icon={<MdMessage />}
-            text="Messages"
-            link="/app/profile/notifications"
-          />
-          {role === "blogger" && (
-            <>
-              {isMinimized ? <Divider /> : <Divider>Blogger</Divider>}
-
-              <ListItemBox
-                icon={<MdArticle />}
-                text="My Blogs"
-                link="/app/blogger/my-blogs"
-              />
-              <ListItemBox
-                icon={<MdEditDocument />}
-                text="Editor"
-                link="/app/blogger/editor"
-              />
-              <ListItemBox
-                icon={<SiGoogleanalytics />}
-                text="Dashboard"
-                link="/app/blogger/analytics"
-              />
-            </>
-          )}
-          {role === "admin" && (
-            <>
-              {isMinimized ? <Divider /> : <Divider>Admin</Divider>}
-              <ListItemBox
-                icon={<MdAdminPanelSettings />}
-                text="Moderation"
-                link="/app/admin/moderation"
-              />
-              <ListItemBox
-                icon={<MdDashboard />}
-                text="Dashboard"
-                link="/app/admin/analytics"
-              />
-            </>
-          )}
-          <Divider />
-          <ListItemBox
-            icon={<IoMdSettings />}
-            text="Settings"
-            link="/app/profile/settings"
-          />
-          <ListItemBox icon={<FaSignOutAlt />} text="Logout" link="/login" />
-        </ul>
-      </nav>
-    </div>
-  );
-};
-
-export default Sidebar; */
 
 type SidebarItemProps = {
   icon: JSX.Element;
@@ -283,11 +146,12 @@ const SidebarContext = createContext({
 });
 
 const Sidebar = () => {
+  const { pathname } = useLocation();
   const [isMobile, setIsMobile] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [role, setRole] = useState<RoleEnum>("user");
   const [activeListItem, setActiveListItem] = useState<listItemsEnum>(
-    locationToListItemMap["explore"]
+    locationToListItemMap[pathname]
   );
   const [alertState, setAlertState] = useState<Record<listItemsEnum, boolean>>(
     ALERTS_STATE_BLUEPRINT

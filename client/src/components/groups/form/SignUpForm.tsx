@@ -3,10 +3,10 @@ import { z } from "zod";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import LoadingButton from "@mui/lab/LoadingButton";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/classMerge.util";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-import { regexErrorMessages, regexPatterns } from "./common"
+import { regexErrorMessages, regexPatterns } from "./common";
 
 const formSchema = z
   .object({

@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/classMerge.util";
 import { useNavigate } from "react-router-dom";
 import { OTPInput } from "input-otp";
 import type { SlotProps } from "input-otp";
