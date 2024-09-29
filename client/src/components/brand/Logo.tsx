@@ -1,4 +1,4 @@
-import { cn } from "@/lib/classMerge.util";
+import { cn } from "@/utils/classMerge.util";
 import React from "react";
 import { PiTextBFill } from "react-icons/pi";
 

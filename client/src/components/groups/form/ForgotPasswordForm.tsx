@@ -4,7 +4,7 @@ import {
   regexPatterns,
 } from "@/components/groups/form/common";
 import { z } from "zod";
-import { cn } from "@/lib/classMerge.util";
+import { cn } from "@/utils/classMerge.util";
 import TextField from "@mui/material/TextField/TextField";
 import LoadingButton from "@mui/lab/LoadingButton/LoadingButton";
 import Button from "@mui/material/Button/Button";

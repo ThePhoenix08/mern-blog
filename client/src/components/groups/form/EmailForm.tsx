@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { cn } from "@/lib/classMerge.util";
+import { cn } from "@/utils/classMerge.util";
 import LoadingButton from "@mui/lab/LoadingButton/LoadingButton";
 import Button from "@mui/material/Button/Button";
 import { z } from "zod";

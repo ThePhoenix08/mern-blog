@@ -1,4 +1,4 @@
-import { cn } from "@/lib/classMerge.util";
+import { cn } from "@/utils/classMerge.util";
 import { useNavigate } from "react-router-dom";
 import { OTPInput } from "input-otp";
 import type { SlotProps } from "input-otp";
@@ -6,13 +6,7 @@ import LoadingButton from "@mui/lab/LoadingButton/LoadingButton";
 import Button from "@mui/material/Button/Button";
 import { useState } from "react";
 
-const ResetCodeForm = ({
-  styleClasses,
-  userEmail,
-}: {
-  styleClasses?: string;
-  userEmail: string;
-}) => {
+const ResetCodeForm = ({ styleClasses }: { styleClasses?: string }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [otp, setOtp] = useState("");
@@ -44,7 +38,7 @@ const ResetCodeForm = ({
       <div className="heading-text flex flex-col gap-2">
         <p className="text-center text-3xl font-bold">Password Reset</p>
         <p className="text-center text-sm text-zinc-700">
-          We sent a code to {userEmail}
+          We sent a code to {/* {userEmail} */}
         </p>
       </div>
       <form onSubmit={onSubmitHandler} className="form flex flex-col gap-4">

@@ -1,161 +1,74 @@
-import React, { useState, createContext, useContext } from "react";
+import { useState, createContext, useContext } from "react";
 
 // logos
-import {
-  MdDashboard, // admin dashboard
-  MdAdminPanelSettings, // admin moderation
-  MdMessage, // messages
-  MdOutlineBookmark, // saved
-  MdExplore, // explore
-  MdArticle, // my blog
-  MdLibraryAddCheck, // subscribtions
-  MdEditDocument, // editor
-} from "react-icons/md";
-import { SiGoogleanalytics } from "react-icons/si"; // blogger analytics
-import { IoMdSettings } from "react-icons/io"; // settings
-import { FaSignOutAlt } from "react-icons/fa"; // logout
-import { MdOutlineMoreVert } from "react-icons/md"; // options
-import { FaCircle } from "react-icons/fa"; // notifications
-import { LuMenu } from "react-icons/lu"; // burger menu
-import { IoIosClose } from "react-icons/io"; // close
-import { RoleEnum } from "@/lib/common_data.util";
+import type { RoleEnum } from "@/types/data";
 import Divider from "@mui/material/Divider/Divider";
 import { Link, useLocation } from "react-router-dom";
-import { cn } from "@/lib/classMerge.util";
+import { cn } from "@/utils/classMerge.util";
 import Logo from "../brand/Logo";
 
-type listItemsEnum =
-  | "Explore"
-  | "My Saved"
-  | "My Subscribtions"
-  | "Messages"
-  | "My Blogs"
+// icons
+import {
+  MdDashboard,
+  MdBookmark,
+  MdExplore,
+  MdLibraryAddCheck,
+  MdMessage,
+  MdClose,
+  MdOutlineMenuOpen,
+  MdCircle,
+  MdOutlineMoreVert,
+} from "react-icons/md";
+import { useSidebarContext } from "@/context/Sidebar.context";
+import { useGlobalContext } from "@/context/Global.context";
+import { invertKeyValues } from "@/utils/invertKeyValue.util";
+
+export type listItemsEnum =
   | "Dashboard"
-  | "Settings"
-  | "Logout"
-  | "Moderation"
-  | "Editor"
-  | "Reader";
+  | "Read"
+  | "Explore"
+  | "Subscriptions"
+  | "Messages";
+
+const SidebarItems: listItemsEnum[] = [
+  "Dashboard",
+  "Read",
+  "Explore",
+  "Subscriptions",
+  "Messages",
+];
 
 const locationToListItemMap: Record<string, listItemsEnum> = {
-  "/app/explore": "Explore",
-  "/app/profile/saves": "My Saved",
-  "/app/profile/subscribtions": "My Subscribtions",
-  "/app/profile/notifications": "Messages",
-  "/app/blogger/my-blogs": "My Blogs",
-  "/app/admin/analytics": "Dashboard",
-  "/app/settings": "Settings",
-  "/app/login": "Logout",
-  "/app/admin/moderation": "Moderation",
-  "/app/blogger/editor": "Editor",
-  "/app/reader": "Reader",
+  "/app/dashboard": "Dashboard",
+  "/app/blog/1/read": "Read",
+  "/app/blogs/explore": "Explore",
+  "/app/subscribtions": "Subscriptions",
+  "/app/messages": "Messages",
 };
 
-type SidebarItemProps = {
-  icon: JSX.Element;
-  text: listItemsEnum;
-  link: string;
+const SidebarIconsMap: Record<listItemsEnum, JSX.Element> = {
+  Dashboard: <MdDashboard />,
+  Read: <MdBookmark />,
+  Explore: <MdExplore />,
+  Subscriptions: <MdLibraryAddCheck />,
+  Messages: <MdMessage />,
 };
 
-const CommonSidebarItems: SidebarItemProps[] = [
-  {
-    icon: <MdExplore />,
-    text: "Explore",
-    link: "/app/explore",
-  },
-  {
-    icon: <MdOutlineBookmark />,
-    text: "My Saved",
-    link: "/app/profile/saves",
-  },
-  {
-    icon: <MdLibraryAddCheck />,
-    text: "My Subscribtions",
-    link: "/app/profile/subscribtions",
-  },
-  {
-    icon: <MdMessage />,
-    text: "Messages",
-    link: "/app/profile/notifications",
-  },
-];
-
-const UserSidebarItems: SidebarItemProps[] = [
-  {
-    icon: <MdArticle />,
-    text: "Reader",
-    link: "/app/reader",
-  },
-];
-
-const AdminSidebarItems: SidebarItemProps[] = [
-  {
-    icon: <MdDashboard />,
-    text: "Dashboard",
-    link: "/app/admin/analytics",
-  },
-  {
-    icon: <MdEditDocument />,
-    text: "Editor",
-    link: "/app/blogger/editor",
-  },
-  {
-    icon: <MdAdminPanelSettings />,
-    text: "Moderation",
-    link: "/app/admin/moderation",
-  },
-];
-
-const BloggerSidebarItems: SidebarItemProps[] = [
-  {
-    icon: <SiGoogleanalytics />,
-    text: "Dashboard",
-    link: "/app/blogger/analytics",
-  },
-  {
-    icon: <MdEditDocument />,
-    text: "Editor",
-    link: "/app/blogger/editor",
-  },
-  {
-    icon: <MdArticle />,
-    text: "My Blogs",
-    link: "/app/blogger/my-blogs",
-  },
-];
-
-const ALERTS_STATE_BLUEPRINT: Record<listItemsEnum, boolean> = {
-  "My Saved": false,
-  "My Subscribtions": false,
-  Messages: false,
-  "My Blogs": false,
+export const ALERTS_STATE_BLUEPRINT: Record<listItemsEnum, boolean> = {
   Dashboard: false,
-  Settings: false,
-  Logout: false,
-  Moderation: false,
-  Editor: false,
-  Reader: false,
+  Read: false,
   Explore: false,
+  Subscriptions: false,
+  Messages: false,
 };
-
-const SidebarContext = createContext({
-  isMinimized: false,
-  activeListItem: locationToListItemMap["explore"],
-  alertState: ALERTS_STATE_BLUEPRINT,
-  setActiveListItem: (target: listItemsEnum) => {},
-});
 
 const Sidebar = () => {
   const { pathname } = useLocation();
-  const [isMobile, setIsMobile] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
-  const [role, setRole] = useState<RoleEnum>("user");
-  const [activeListItem, setActiveListItem] = useState<listItemsEnum>(
-    locationToListItemMap[pathname]
-  );
-  const [alertState, setAlertState] = useState<Record<listItemsEnum, boolean>>(
-    ALERTS_STATE_BLUEPRINT
-  );
+  const { isMinimized, setIsMinimized, activeListItem, setActiveListItem } =
+    useSidebarContext();
+  const { user, role, isMobile } = useGlobalContext();
+  setActiveListItem(locationToListItemMap[pathname]);
+  const ListItemToLocation = invertKeyValues(locationToListItemMap);
 
   if (isMobile) {
     return <div>mobile</div>;
@@ -194,71 +107,24 @@ const Sidebar = () => {
                 onClick={() => setIsMinimized(!isMinimized)}
               >
                 {isMinimized ? (
-                  <LuMenu className="w-3/4 h-3/4 text-white" />
+                  <MdOutlineMenuOpen className="w-3/4 h-3/4 text-white" />
                 ) : (
-                  <IoIosClose className="w-3/4 h-3/4 text-white" />
+                  <MdClose className="w-3/4 h-3/4 text-white" />
                 )}
               </div>
             </div>
           </div>
-          <SidebarContext.Provider
-            value={{
-              alertState,
-              activeListItem,
-              isMinimized,
-              setActiveListItem,
-            }}
-          >
-            <ul className="menu-container flex-1 flex flex-col gap-2">
-              {CommonSidebarItems.map((item, index) => (
-                <SidebarItem
-                  key={index}
-                  icon={item.icon}
-                  text={item.text}
-                  link={item.link}
-                />
-              ))}
-              {role === "user" && (
-                <>
-                  {isMinimized ? <Divider /> : <Divider>User</Divider>}
-                  {UserSidebarItems.map((item, index) => (
-                    <SidebarItem
-                      key={index}
-                      icon={item.icon}
-                      text={item.text}
-                      link={item.link}
-                    />
-                  ))}
-                </>
-              )}
-              {role === "blogger" && (
-                <>
-                  {isMinimized ? <Divider /> : <Divider>Blogger</Divider>}
-                  {BloggerSidebarItems.map((item, index) => (
-                    <SidebarItem
-                      key={index}
-                      icon={item.icon}
-                      text={item.text}
-                      link={item.link}
-                    />
-                  ))}
-                </>
-              )}
-              {role === "admin" && (
-                <>
-                  {isMinimized ? <Divider /> : <Divider>Admin</Divider>}
-                  {AdminSidebarItems.map((item, index) => (
-                    <SidebarItem
-                      key={index}
-                      icon={item.icon}
-                      text={item.text}
-                      link={item.link}
-                    />
-                  ))}
-                </>
-              )}
-            </ul>
-          </SidebarContext.Provider>
+          <ul className="menu-container flex-1 flex flex-col gap-2">
+            {/* sidebar items */}
+            {SidebarItems.map((item, index) => (
+              <SidebarItem
+                key={index}
+                icon={SidebarIconsMap[item]}
+                text={item}
+                link={ListItemToLocation[item]}
+              />
+            ))}
+          </ul>
           <div className="profile-container flex items-center gap-2 py-4 px-2">
             <div className="avatar-container p-2">
               <img
@@ -299,7 +165,7 @@ const SidebarItem = ({
     activeListItem,
     isMinimized: state,
     setActiveListItem,
-  } = useContext(SidebarContext);
+  } = useSidebarContext();
   const active = activeListItem === text;
   const alert = alertState[text];
   return (
@@ -321,7 +187,7 @@ const SidebarItem = ({
           <span className="text-blue-marguerite-500 text-3xl ml-4">{icon}</span>
           <span className={`${state && "hidden"}`}>{text}</span>
         </div>
-        {alert && <FaCircle className="text-sm text-red-500" />}
+        {alert && <MdCircle className="text-sm text-red-500" />}
       </Link>
     </li>
   );

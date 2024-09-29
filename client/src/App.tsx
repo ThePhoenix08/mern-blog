@@ -1,68 +1,163 @@
 import { Routes, Route } from "react-router-dom";
-import Moderation from "./pages/App/Admin/Moderation";
-import Dashboard from "./pages/App/Blogger/Dashboard";
-import Editor from "./pages/App/Blogger/Editor";
-import Explore from "./pages/App/Explore/Explore";
-import Feed from "./pages/App/Explore/Feed";
-import Trending from "./pages/App/Explore/Trending";
-import Notifications from "./pages/App/Profile/Notifications";
-import Profile from "./pages/App/Profile/Profile";
-import ForgotPassword from "./pages/public/ForgotPassword";
-import Login from "./pages/public/Login";
-import SignUp from "./pages/public/SignUp";
-import Admin from "./pages/App/Admin/Admin";
-import Blogger from "./pages/App/Blogger/Blogger";
-import A_Dashboard from "./pages/App/Admin/A_Dashboard";
-import NotFound from "./pages/public/NotFound";
-import Home from "./pages/public/Home";
-import Search from "./pages/App/Explore/Search";
-import Settings from "./pages/App/Profile/Settings";
-import AppWrapper from "./pages/App/AppWrapper";
-import SavedBlogs from "./pages/App/Profile/SavedBlogs";
-import MySubscribtions from "./pages/App/Profile/MySubscribtions";
-import MyBlogs from "./pages/App/Blogger/MyBlogs";
-import Reader from "./pages/App/Reader";
+import {
+  authRoutes,
+  appRoutes,
+  blogRoutes,
+  blogsRoutes,
+  dashboardRoutes,
+  ForgotPasswordRoutes,
+} from "./routes/routes";
+
+import ForgotPassword from "@/pages/Auth/ForgotPassword.page";
+import Landing from "@/pages/Auth/Landing.page";
+import Login from "@/pages/Auth/Login.page";
+import NotFound from "@/pages/Auth/NotFound.page";
+import SignUp from "@/pages/Auth/SignUp.page";
+
+import Dashboard from "@/components/wrappers/Dashboard.wrapper";
+import Profile from "@/pages/App/Profile.page";
+import PublicProfile from "@/pages/App/PublicProfile.page";
+import Settings from "@/pages/App/Settings.page";
+import Blog from "@/components/wrappers/Blog.wrapper";
+import Blogs from "@/components/wrappers/Blogs.wrapper";
+import Subscribtions from "@/pages/App/Subscribtions.page";
+import Messages from "@/pages/App/Messages.page";
+import { PrivilegeLevels, RoleEnum } from "./types/data";
+import { useGlobalContext } from "./context/Global.context";
+import Edit from "./pages/App/blog/Edit.page";
+import Read from "./pages/App/blog/Read.page";
+import Explore from "./pages/App/blogs/Explore.page";
+import Feed from "./pages/App/blogs/Feed.page";
+import ModerateBlogs from "./pages/App/blogs/ModerateBlogs.page";
+import MyBlogs from "./pages/App/blogs/MyBlogs.page";
+import Popular from "./pages/App/blogs/Popular.page";
+import Saved from "./pages/App/blogs/Saved.page";
+import AdminDashboard from "./pages/App/dashboard/AdminDashboard.page";
+import BloggerDashboard from "./pages/App/dashboard/BloggerDashboard.page";
+import UserDashboard from "./pages/App/dashboard/UserDashboard.page";
+import AppWrapper from "./components/wrappers/App.wrapper";
+import ForgotPasswordForm from "./components/groups/form/ForgotPasswordForm";
+import EmailForm from "./components/groups/form/EmailForm";
+import ResetCodeForm from "./components/groups/form/ResetCodeForm";
+
+const elementNameToElementMap: {
+  [key: string]: JSX.Element;
+} = {
+  // auth
+  Landing: <Landing />,
+  Login: <Login />,
+  SignUp: <SignUp />,
+  ForgotPassword: <ForgotPassword />,
+  NotFound: <NotFound />,
+  ForgotPasswordSuccess: <ForgotPassword />,
+  EmailForm: <EmailForm />,
+  ForgotPasswordForm: <ForgotPasswordForm />,
+  ResetCodeForm: <ResetCodeForm />,
+
+  // app
+  Dashboard: <Dashboard />,
+  Profile: <Profile />,
+  PublicProfile: <PublicProfile />,
+  Settings: <Settings />,
+  Blog: <Blog />,
+  Blogs: <Blogs />,
+  Subscribtions: <Subscribtions />,
+  Messages: <Messages />,
+
+  // blog
+  Read: <Read />,
+  Edit: <Edit />,
+
+  // blogs
+  Explore: <Explore />,
+  Feed: <Feed />,
+  ModerateBlogs: <ModerateBlogs />,
+  MyBlogs: <MyBlogs />,
+  Popular: <Popular />,
+  Saved: <Saved />,
+
+  // dashboard
+  UserDashboard: <UserDashboard />,
+  BloggerDashboard: <BloggerDashboard />,
+  AdminDashboard: <AdminDashboard />,
+};
+
+const roleToPrivilegeMap: Record<RoleEnum, PrivilegeLevels> = {
+  user: 2,
+  blogger: 1,
+  admin: 0,
+};
 
 function App() {
-  const notFoundFallbackRoute = (fallback: string) => (
-    <Route path="*" element={<NotFound fallback={fallback} />} />
-  );
+  const userRole = useGlobalContext().role;
+  const UserPrivilege = roleToPrivilegeMap[userRole];
 
   return (
     <div className="App font-[inter]">
       <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Home />} index />
-        <Route path="home" element={<Home />} />
-        <Route path="login" element={<Login />} />
-        <Route path="signup" element={<SignUp />} />
-        <Route path="forgot-password/*" element={<ForgotPassword />} />
-
-        {/* Authenticated Routes */}
-        <Route path="/app" element={<AppWrapper />}>
-          <Route path="explore" element={<Explore />}>
-            <Route path="feed" element={<Feed />} />
-            <Route path="trending" element={<Trending />} index />
-            <Route path="search" element={<Search />} />
+        {authRoutes.map((route, index) => (
+          <Route
+            key={index}
+            path={route.path}
+            element={elementNameToElementMap[route.elementName]}
+          />
+        ))}
+        <Route path="forgot-password/*" element={<ForgotPassword />}>
+          {ForgotPasswordRoutes.map((route, index) => (
+            <Route
+              key={index}
+              index={route.index}
+              path={route.path}
+              element={elementNameToElementMap[route.elementName]}
+            />
+          ))}
+        </Route>
+        <Route path="app/*" element={<AppWrapper />}>
+          {appRoutes.map((route, index) => (
+            <Route
+              key={index}
+              index={route.index}
+              path={route.path}
+              element={elementNameToElementMap[route.elementName]}
+            />
+          ))}
+          <Route path="blog/*" element={<Blog />}>
+            {blogRoutes
+              .filter((route) => route.privilege === UserPrivilege)
+              .map((route, index) => (
+                <Route
+                  key={index}
+                  index={route.index}
+                  path={route.path}
+                  element={elementNameToElementMap[route.elementName]}
+                />
+              ))}
           </Route>
-          <Route path="profile" element={<Profile />}>
-            <Route path="settings" element={<Settings />} />
-            <Route path="notifications" element={<Notifications />} />
-            <Route path="saves" element={<SavedBlogs />} />
-            <Route path="subscribtions" element={<MySubscribtions />} />
+          <Route path="blogs/*" element={<Blogs />}>
+            {blogsRoutes
+              .filter((route) => route.privilege === UserPrivilege)
+              .map((route, index) => (
+                <Route
+                  key={index}
+                  index={route.index}
+                  path={route.path}
+                  element={elementNameToElementMap[route.elementName]}
+                />
+              ))}
           </Route>
-          <Route path="reader" element={<Reader />} />
-          <Route path="blogger" element={<Blogger />}>
-            <Route path="my-blogs" element={<MyBlogs />} />
-            <Route path="editor" element={<Editor />} />
-            <Route path="analytics" element={<Dashboard />} />
-          </Route>
-          <Route path="admin" element={<Admin />}>
-            <Route path="analytics" element={<A_Dashboard />} />
-            <Route path="moderation" element={<Moderation />} />
+          <Route path="dashboard/*" element={<Dashboard />}>
+            {dashboardRoutes
+              .filter((route) => route.privilege === UserPrivilege)
+              .map((route, index) => (
+                <Route
+                  key={index}
+                  index={route.index}
+                  path={route.path}
+                  element={elementNameToElementMap[route.elementName]}
+                />
+              ))}
           </Route>
         </Route>
-        {notFoundFallbackRoute("/")}
       </Routes>
     </div>
   );

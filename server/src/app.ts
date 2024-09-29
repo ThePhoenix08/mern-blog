@@ -34,7 +34,7 @@ const combinedMiddlewares: RequestHandler[] = [
 app.use(combinedMiddlewares);
 
 // router imports
-import { publicRouter, authRouter } from "@routes/main.router";
+import { publicRouter, authRouter } from "@routes/main.routes";
 import { printRoutes } from "@utils/debug.util";
 
 // applying routers
