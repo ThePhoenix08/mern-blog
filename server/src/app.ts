@@ -35,7 +35,7 @@ app.use(combinedMiddlewares);
 
 // router imports
 import { publicRouter, authRouter } from "@routes/main.routes";
-import { printRoutes } from "@utils/debug.util";
+// import { printRoutes } from "@utils/debug.util";
 
 // applying routers
 const baseEndpoint = "/api/v1";
@@ -43,7 +43,7 @@ app.use(baseEndpoint + "/public", publicRouter);
 app.use(baseEndpoint + "/auth", authRouter);
 app.all("*", notFoundHandler); // middleware to handle 404 errors
 
-printRoutes(app._router); // DEBUG only
+// printRoutes(app._router); // DEBUG only
 // error handlers
 app.use(errorHandler); // middleware to handle errors
 
