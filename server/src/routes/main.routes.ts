@@ -92,10 +92,7 @@ const postsAndCommentsRouter = Router();
 postsAndCommentsRouter.use(authoriseRole("user"));
 postsAndCommentsRouter.route("/posts").get(blogController.getBlogs);
 postsAndCommentsRouter.route("/tags").get(blogController.getBlogTags);
-postsAndCommentsRouter
-  .route("/blog/:id")
-  .get(blogController.getBlog)
-  .put(blogController.toggleBlogSave);
+postsAndCommentsRouter.route("/blog/:id").put(blogController.toggleBlogSave);
 postsAndCommentsRouter
   .route("/comments/:blogId")
   .get(commentController.getComments)

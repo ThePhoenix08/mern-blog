@@ -214,11 +214,13 @@ const updateDocumentById = async <T extends Document>(
   validate: boolean = true
 ) => {
   const model = modelNameToModel[modelName];
-  const document = await model.findByIdAndUpdate(id, updateData, {
-    new: true,
-    runValidators: validate || true,
-    context: "query",
-  });
+  const document = await model
+    .findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: validate || true,
+      context: "query",
+    })
+    .lean();
   if (!document)
     throw ApiError.internal(
       `Error while updating document for model ${modelName}`,
