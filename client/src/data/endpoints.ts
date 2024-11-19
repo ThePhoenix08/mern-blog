@@ -69,7 +69,8 @@ export type fnName =
   | "getAdminGrowthRates"
   | "getAdminTopPerformers"
   | "getTopPerformersOptions"
-  | "getSpecificAnalytics";
+  | "getSpecificAnalytics"
+  | "getSubscribedTo";
 
 export const restEndpoints: Record<fnName, Endpoint> = {
   healthCheck: {
@@ -95,246 +96,251 @@ export const restEndpoints: Record<fnName, Endpoint> = {
   refreshUser: {
     name: "refreshUser",
     method: "post",
-    endpoint: "/account/refreshUser",
+    endpoint: "/auth/account/refreshUser",
   },
   resetPassword: {
     name: "resetPassword",
     method: "post",
-    endpoint: "/account/resetPassword",
+    endpoint: "/auth/account/resetPassword",
   },
   logout: {
     name: "logout",
     method: "post",
-    endpoint: "/account/logout",
+    endpoint: "/auth/account/logout",
   },
   getProfile: {
     name: "getProfile",
     method: "get",
-    endpoint: "/users/profile",
+    endpoint: "/auth/users/profile",
   },
   updateProfile: {
     name: "updateProfile",
     method: "patch",
-    endpoint: "/users/profile",
+    endpoint: "/auth/users/profile",
   },
   deleteProfile: {
     name: "deleteProfile",
     method: "delete",
-    endpoint: "/users/profile",
+    endpoint: "/auth/users/profile",
   },
   uploadAvatar: {
     name: "uploadAvatar",
     method: "post",
-    endpoint: "/users/avatar",
+    endpoint: "/auth/users/avatar",
   },
   toggleSubscribeToBlogger: {
     name: "toggleSubscribeToBlogger",
     method: "put",
-    endpoint: "/users/subscribe/:bloggerId",
+    endpoint: "/auth/users/subscribe/:bloggerId",
+  },
+  getSubscribedTo: {
+    name: "getSubscribedTo",
+    method: "get",
+    endpoint: "/auth/users/subscribedTo",
   },
   getUserComments: {
     name: "getUserComments",
     method: "post",
-    endpoint: "/users/myComments",
+    endpoint: "/auth/users/myComments",
   },
   getUserPublicProfile: {
     name: "getUserPublicProfile",
     method: "get",
-    endpoint: "/users/publicProfile/:userId",
+    endpoint: "/auth/users/publicProfile/:userId",
   },
   getUserSettings: {
     name: "getUserSettings",
     method: "get",
-    endpoint: "/users/settings",
+    endpoint: "/auth/users/settings",
   },
   updateUserSettings: {
     name: "updateUserSettings",
     method: "patch",
-    endpoint: "/users/settings",
+    endpoint: "/auth/users/settings",
   },
   getBlogs: {
     name: "getBlogs",
     method: "get",
-    endpoint: "/blogger/posts",
+    endpoint: "/auth/blogger/posts",
   },
   deleteBlogs: {
     name: "deleteBlogs",
     method: "delete",
-    endpoint: "/blogger/posts",
+    endpoint: "/auth/blogger/posts",
   },
   createBlog: {
     name: "createBlog",
     method: "post",
-    endpoint: "/blogger/posts",
+    endpoint: "/auth/blogger/posts",
   },
   getBlog: {
     name: "getBlog",
     method: "get",
-    endpoint: "/blogger/blog/:id",
+    endpoint: "/auth/blogger/blog/:id",
   },
   updateBlog: {
     name: "updateBlog",
     method: "patch",
-    endpoint: "/blogger/blog/:id",
+    endpoint: "/auth/blogger/blog/:id",
   },
   deleteBlog: {
     name: "deleteBlog",
     method: "delete",
-    endpoint: "/blogger/blog/:id",
+    endpoint: "/auth/blogger/blog/:id",
   },
   updateBloggerProfile: {
     name: "updateProfile",
     method: "patch",
-    endpoint: "/blogger/updateProfile",
+    endpoint: "/auth/blogger/updateProfile",
   },
   uploadCoverImage: {
     name: "uploadCoverImage",
     method: "post",
-    endpoint: "/blogger/cover",
+    endpoint: "/auth/blogger/cover",
   },
   getBloggerSpecificAnalytics: {
     name: "getBloggerSpecificAnalytics",
     method: "get",
-    endpoint: "/blogger/specificAnalytics",
+    endpoint: "/auth/blogger/specificAnalytics",
   },
   getManyBlogs: {
     name: "getBlogs",
     method: "get",
-    endpoint: "/content/posts",
+    endpoint: "/auth/content/posts",
   },
   getBlogTags: {
     name: "getBlogTags",
     method: "get",
-    endpoint: "/content/tags",
+    endpoint: "/auth/content/tags",
   },
   toggleBlogSave: {
     name: "toggleBlogSave",
     method: "put",
-    endpoint: "/content/blog/:id",
+    endpoint: "/auth/content/blog/:id",
   },
   getComments: {
     name: "getComments",
     method: "get",
-    endpoint: "/content/comments/:blogId",
+    endpoint: "/auth/content/comments/:blogId",
   },
   addComment: {
     name: "addComment",
     method: "post",
-    endpoint: "/content/comments/:blogId",
+    endpoint: "/auth/content/comments/:blogId",
   },
   updateComment: {
     name: "updateComment",
     method: "patch",
-    endpoint: "/content/comments/:blogId/:commentId",
+    endpoint: "/auth/content/comments/:blogId/:commentId",
   },
   deleteComment: {
     name: "deleteComment",
     method: "delete",
-    endpoint: "/content/comments/:blogId/:commentId",
+    endpoint: "/auth/content/comments/:blogId/:commentId",
   },
   createReport: {
     name: "createReport",
     method: "post",
-    endpoint: "/reports/new",
+    endpoint: "/auth/reports/new",
   },
   getNotifs: {
     name: "getNotifs",
     method: "get",
-    endpoint: "/reports/notifs",
+    endpoint: "/auth/reports/notifs",
   },
   markAsRead: {
     name: "markAsRead",
     method: "put",
-    endpoint: "/reports/notifs/:notifId",
+    endpoint: "/auth/reports/notifs/:notifId",
   },
   deleteNotif: {
     name: "deleteNotif",
     method: "delete",
-    endpoint: "/reports/notifs/:notifId",
+    endpoint: "/auth/reports/notifs/:notifId",
   },
   getAllUsers: {
     name: "getAllUsers",
     method: "get",
-    endpoint: "/admin/users",
+    endpoint: "/auth/admin/users",
   },
   updateUserRole: {
     name: "updateUserRole",
     method: "patch",
-    endpoint: "/admin/user/:userId",
+    endpoint: "/auth/admin/user/:userId",
   },
   banUser: {
     name: "banUser",
     method: "delete",
-    endpoint: "/admin/user/:userId",
+    endpoint: "/auth/admin/user/:userId",
   },
   getAllBlogs: {
     name: "getAllBlogs",
     method: "get",
-    endpoint: "/admin/blogs",
+    endpoint: "/auth/admin/blogs",
   },
   moderateBlog: {
     name: "moderateBlog",
     method: "patch",
-    endpoint: "/admin/blog/:blogId",
+    endpoint: "/auth/admin/blog/:blogId",
   },
   adminDeleteBlog: {
     name: "adminDeleteBlog",
     method: "delete",
-    endpoint: "/admin/blog/:blogId",
+    endpoint: "/auth/admin/blog/:blogId",
   },
   getAllReports: {
     name: "getAllReports",
     method: "get",
-    endpoint: "/admin/reports",
+    endpoint: "/auth/admin/reports",
   },
   resolveReport: {
     name: "resolveReport",
     method: "patch",
-    endpoint: "/admin/report/:reportId",
+    endpoint: "/auth/admin/report/:reportId",
   },
   deleteReport: {
     name: "deleteReport",
     method: "delete",
-    endpoint: "/admin/report/:reportId",
+    endpoint: "/auth/admin/report/:reportId",
   },
   moderateComment: {
     name: "moderateComment",
     method: "patch",
-    endpoint: "/admin/comment/:commentId",
+    endpoint: "/auth/admin/comment/:commentId",
   },
   adminDeleteComment: {
     name: "adminDeleteComment",
     method: "delete",
-    endpoint: "/admin/comment/:commentId",
+    endpoint: "/auth/admin/comment/:commentId",
   },
   getAdminTotals: {
     name: "getAdminTotals",
     method: "get",
-    endpoint: "/admin/dashboard/totals",
+    endpoint: "/auth/admin/dashboard/totals",
   },
   getAdminMetricsOverTime: {
     name: "getAdminMetricsOverTime",
     method: "get",
-    endpoint: "/admin/dashboard/metrics-over-time",
+    endpoint: "/auth/admin/dashboard/metrics-over-time",
   },
   getAdminGrowthRates: {
     name: "getAdminGrowthRates",
     method: "get",
-    endpoint: "/admin/dashboard/growth-rates",
+    endpoint: "/auth/admin/dashboard/growth-rates",
   },
   getAdminTopPerformers: {
     name: "getAdminTopPerformers",
     method: "get",
-    endpoint: "/admin/dashboard/top-performers",
+    endpoint: "/auth/admin/dashboard/top-performers",
   },
   getTopPerformersOptions: {
     name: "getTopPerformersOptions",
     method: "get",
-    endpoint: "/admin/top-performers-options",
+    endpoint: "/auth/admin/top-performers-options",
   },
   getSpecificAnalytics: {
     name: "getSpecificAnalytics",
     method: "get",
-    endpoint: "/admin/specific/analytics",
+    endpoint: "/auth/admin/specific/analytics",
   },
 };

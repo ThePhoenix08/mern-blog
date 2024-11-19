@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { IBlogger } from "models/blogger.model";
+import Blogger, { IBlogger } from "models/blogger.model";
 import { IComment } from "models/comment.model";
 import {
   deleteDocumentById,
@@ -19,7 +19,7 @@ import {
 import AuthRequest from "types/express";
 import { paginationSchema } from "validators/common.validator";
 import { updateProfileSchema } from "validators/user.validator";
-import { IUser } from "../models/user.model";
+import type { IUser } from "../models/user.model";
 import ApiError from "../utils/ApiError.util";
 import ApiResponse from "../utils/ApiResponse.util";
 import asyncHandler from "../utils/asyncHandler.util";
@@ -216,7 +216,7 @@ export const uploadAvatar = asyncHandler(async (req, res) => {
   const updatedUser = await updateDocumentById("user", user._id as string, {
     avatar: uploadedFileUrl,
   });
-  const returnUser = omit(updatedUser.toObject(), ["refreshToken", "password"]);
+  const returnUser = omit(updatedUser, ["refreshToken", "password"]);
 
   res.status(200).json(
     new ApiResponse({
@@ -333,4 +333,43 @@ export const getUserComments = asyncHandler(async (req, res) => {
           : "User comments fetched successfully.",
     })
   );
+});
+
+export const getSubscribedTo = asyncHandler(async (req, res) => {
+  const user = await getUserFromRequest(req);
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  const subscribedTo = user.subscribedTo;
+
+  if (!subscribedTo || subscribedTo.length === 0)
+    throw ApiError.notFound("No subscribed to blogs found.", {
+      slug: "NO_SUBSCRIBEDTO_BLOGS",
+    });
+
+  const subscribedToBloggers: UserWithOptionalBloggerFields[] =
+    await Blogger.find({
+      _id: { $in: subscribedTo },
+    }).lean();
+  if (!subscribedToBloggers || subscribedToBloggers.length === 0)
+    throw ApiError.notFound("No subscribed to blogs found.", {
+      slug: "NO_SUBSCRIBEDTO_BLOGS",
+    });
+
+  const result = subscribedToBloggers.map((blogger) => {
+    return {
+      _id: blogger._id,
+      username: blogger.username,
+      fullname: blogger.fullname,
+      avatar: blogger.avatar,
+      cover: blogger.coverImage,
+      subscriberCount: blogger.totalSubscribers,
+    };
+  });
+
+  return res.status(200).json({
+    data: {
+      subscribedTo: result,
+    },
+    message: "Subscribed to fetched successfully.",
+  });
 });

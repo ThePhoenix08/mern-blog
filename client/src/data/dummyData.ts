@@ -16,6 +16,7 @@ export const userData = {
     darkMode: false,
     language: "en",
   },
+  avatar: "https://picsum.photos/id/10/200/200",
   subscribedTo: [],
   isEmailVerified: false,
   createdAt: "2024-10-28T11:37:56.874Z",

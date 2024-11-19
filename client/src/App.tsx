@@ -13,10 +13,19 @@ import SubscribtionsPage from "./components/feature/profile/SubscribtionsPage";
 import DashboardPage from "./components/feature/analytics/DashboardPage";
 import NotFoundPage from "./components/feature/authentication/NotFoundPage";
 import AppWrapper from "./components/feature/core/AppWrapper";
+import { Toaster } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { setUpAxiosInterceptor } from "./api/axiosInstance";
 
 function App() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    setUpAxiosInterceptor(navigate);
+  }, [navigate]);
+
   return (
-    <div className="app">
+    <div className="app font-['Inter']">
       <Routes>
         <Route path="/" element={<LandingPage />} index />
         <Route path="/signup" element={<SignUpPage />} />
@@ -38,6 +47,21 @@ function App() {
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          className: "toast-container",
+          duration: 5000,
+          style: {
+            background: "hsl(var(--background))",
+            color: "hsl(var(--foreground))",
+            borderRadius: "var(--radius)",
+            padding: "1rem",
+            fontSize: "1rem",
+            border: "1px solid hsl(var(--border))",
+          },
+        }}
+      />
     </div>
   );
 }

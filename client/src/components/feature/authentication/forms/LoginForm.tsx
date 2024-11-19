@@ -5,13 +5,13 @@ import { z } from "zod";
 import { FormInputControl } from "../components/Input";
 import { CustomButton } from "../components/Button";
 import { FaArrowRight, FaSpinner } from "react-icons/fa";
-import toast from "react-hot-toast";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import login from "@/api/auth/login";
-import { setUserCreds } from "@/redux/slices/authSlice";
+import login from "@/components/feature/authentication/api/login";
+import { logout, setUserCreds } from "@/redux/slices/authSlice";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const FormDataBlueprint: {
   username?: string;
@@ -75,32 +75,30 @@ const LoginForm = ({ classes }: { classes?: string }) => {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     console.log(formState);
-
     setIsSubmitting(true);
-    const formData: Record<string, string> = { ...formState };
 
+    const formData: Record<string, string> = { ...formState };
     const isFormValid = formDataValidator(formData);
     if (!isFormValid) {
       console.log("Form data is invalid");
       toast.error("ValidationError: Please fill all fields correctly");
+
       setIsSubmitting(false);
       return;
     }
 
-    const response = await login(formData);
-    console.log(response);
+    const { success, data: user, error } = await login(formData);
 
-    if (response.statusCode === 200) {
+    if (success) {
       toast.success("Login successful");
-      dispatch(
-        setUserCreds({ user: response.data, isVerified: false, isAuth: true })
-      );
-      navigate(`/app/profile/${response.data.username}`);
+      dispatch(setUserCreds({ user, isVerified: false, isAuth: true }));
+      navigate(`/app/profile/${user.username}`);
       setFormState(FormDataBlueprint);
       setFormErrors(FormDataBlueprint);
     } else {
-      dispatch(setUserCreds({ user: null, isVerified: false, isAuth: false }));
       toast.error("Signup failed");
+      console.log(error);
+      dispatch(logout());
     }
 
     setIsSubmitting(false);

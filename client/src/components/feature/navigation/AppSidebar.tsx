@@ -16,11 +16,14 @@ import sidebarData from "./sidebarData";
 import { NavUser } from "./nav-user";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { selectCurrentUser } from "@/redux/slices/authSlice";
 
 export function AppSidebar() {
   const { open } = useSidebar();
   const { pathname } = useLocation();
+  const user = useSelector(selectCurrentUser);
   const [activeItem, setActiveItem] = useState(pathname);
 
   return (
@@ -50,7 +53,7 @@ export function AppSidebar() {
         />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={sidebarData.user} />
+        <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
   );
@@ -81,8 +84,8 @@ const SidebarGroupModel = ({
             return (
               <SidebarMenuItem key={item.name}>
                 <SidebarMenuButton asChild isActive={isActive}>
-                  <a
-                    href={item.url}
+                  <Link
+                    to={item.url}
                     className={cn(
                       "hover:translate-x-2 transition-transform duration-300",
                       isActive && "translate-x-2"
@@ -91,7 +94,7 @@ const SidebarGroupModel = ({
                   >
                     <item.icon />
                     <span>{item.name}</span>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             );

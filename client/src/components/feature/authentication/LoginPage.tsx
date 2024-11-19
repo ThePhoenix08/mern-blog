@@ -10,7 +10,7 @@ const LoginPage = () => {
         </div>
       </div>
       <div className="signupform grid place-items-center p-4">
-        <LoginForm classes="" />
+        <LoginForm classes="border-2" />
       </div>
     </div>
   );

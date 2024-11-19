@@ -57,6 +57,7 @@ userRouter
   .route("/settings")
   .get(settingsController.getUserSettings)
   .patch(settingsController.updateUserSettings);
+userRouter.route("/subscribedTo").get(userController.getSubscribedTo);
 
 /** blogger role routes - blogger and above can access */
 const bloggerRouter = Router();

@@ -72,7 +72,10 @@ const registerUser = asyncHandler(async (req: Request, res: Response) => {
 
   return res
     .status(200)
-    .cookie("accessToken", accessToken, options)
+    .cookie("accessToken", accessToken, {
+      secure: true,
+      sameSite: "strict",
+    })
     .cookie("refreshToken", refreshToken, options)
     .json(
       new ApiResponse({
@@ -114,7 +117,10 @@ const loginUser = asyncHandler(async (req: Request, res: Response) => {
 
   res
     .status(200)
-    .cookie("accessToken", accessToken, options)
+    .cookie("accessToken", accessToken, {
+      secure: true,
+      sameSite: "strict",
+    })
     .cookie("refreshToken", refreshToken, options)
     .json(
       new ApiResponse({
@@ -135,6 +141,8 @@ const handleRefreshUser = asyncHandler(async (req: Request, res: Response) => {
   const clientRefreshToken = await validateRequest(req);
   const { user } = await validateRefreshToken(clientRefreshToken);
   const accessToken = await generateAccessToken(user);
+  const leanUser = await getDocumentById("user", user._id as string, true);
+  const returnUser = omit(leanUser, ["password", "refreshToken"]);
 
   return res
     .status(200)
@@ -142,6 +150,7 @@ const handleRefreshUser = asyncHandler(async (req: Request, res: Response) => {
     .json(
       new ApiResponse({
         statusCode: 200,
+        data: returnUser,
         message: "Access Token Refresh",
       })
     );

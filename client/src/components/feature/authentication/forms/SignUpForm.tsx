@@ -4,12 +4,12 @@ import { CustomButton } from "../components/Button";
 import { FaArrowRight, FaSpinner } from "react-icons/fa";
 import { regexPatterns, regexErrorMessages } from "@/data/regex";
 import { z } from "zod";
-import toast from "react-hot-toast";
 import { useState } from "react";
-import register from "@/api/auth/register";
+import register from "@/components/feature/authentication/api/register";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { setUserCreds } from "@/redux/slices/authSlice";
+import { logout, setUserCreds } from "@/redux/slices/authSlice";
+import { toast } from "react-hot-toast";
 
 const FormDataBlueprint = {
   username: "",
@@ -64,10 +64,10 @@ const SignUpForm = ({ classes }: { classes?: string }) => {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     console.log(formState);
-
     setIsSubmitting(true);
+
     const formData: Record<string, string> = { ...formState };
-    formData["role"] = "user";
+    formData["role"] = "blogger";
 
     const isFormValid = formDataValidator(formData);
     if (!isFormValid) {
@@ -80,22 +80,18 @@ const SignUpForm = ({ classes }: { classes?: string }) => {
     delete formData["firstName"];
     delete formData["lastName"];
 
-    const response = await register(formData);
-    console.log(response);
-
-    if (response.statusCode === 200) {
+    const { success, data: user, error } = await register(formData);
+    if (success) {
       toast.success("Signup successful");
-      dispatch(
-        setUserCreds({ user: response.data, isVerified: false, isAuth: true })
-      );
-      navigate(`/app/profile/${response.data.username}`);
+      dispatch(setUserCreds({ user, isVerified: false, isAuth: true }));
+      navigate(`/app/profile/${user.username}`);
       setFormState(FormDataBlueprint);
       setFormErrors(FormDataBlueprint);
     } else {
-      dispatch(setUserCreds({ user: null, isVerified: false, isAuth: false }));
       toast.error("Signup failed");
+      dispatch(logout());
+      console.log(error);
     }
-
     setIsSubmitting(false);
   };
 
