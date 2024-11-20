@@ -19,6 +19,7 @@ type SidebarGroup = {
     name: string;
     url: string;
     icon: any;
+    bloggerOnly?: boolean;
   }[];
 };
 
@@ -57,7 +58,12 @@ const sidebarData: {
     items: [
       { name: "Saves", url: "/app/blogs/saves", icon: Bookmark },
       { name: "Liked", url: "/app/blogs/liked", icon: Heart },
-      { name: "My Blogs", url: "/app/blogs/byMe", icon: FolderPen },
+      {
+        name: "My Blogs",
+        url: "/app/blogs/byMe",
+        icon: FolderPen,
+        bloggerOnly: true,
+      },
     ],
   },
   blogs: {

@@ -1,4 +1,4 @@
-import axiosInstance from "@/api/axiosInstance";
+import axiosInstance from "@/axios/axiosInstance";
 import { restEndpoints } from "@/data/endpoints";
 
 const handleSubscribedTo = (subscribedTo?: string[]): [boolean, any[]] => {

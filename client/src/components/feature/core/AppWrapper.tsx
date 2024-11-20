@@ -1,4 +1,4 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/feature/navigation/AppSidebar";
@@ -9,6 +9,7 @@ import { refreshUser } from "./api/RefreshUser";
 
 const AppWrapper = () => {
   const isAuth = useSelector(selectIsAuth);
+  const navigate = useNavigate();
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -19,6 +20,7 @@ const AppWrapper = () => {
       } catch (error) {
         console.log(error);
         dispatch(logout());
+        navigate("/login");
       }
     };
     validateSession();

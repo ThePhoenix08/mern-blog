@@ -16,7 +16,7 @@ import AppWrapper from "./components/feature/core/AppWrapper";
 import { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import { setUpAxiosInterceptor } from "./api/axiosInstance";
+import { setUpAxiosInterceptor } from "./axios/axiosInstance";
 
 function App() {
   const navigate = useNavigate();

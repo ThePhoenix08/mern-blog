@@ -70,16 +70,21 @@ const SidebarGroupModel = ({
     name: string;
     url: string;
     icon: any;
+    bloggerOnly?: boolean;
   }[];
   activeItem: string;
   onItemClick: (item: string) => void;
 }) => {
+  const user = useSelector(selectCurrentUser);
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{label}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => {
+            if (item.bloggerOnly && user.role !== "blogger") {
+              return null;
+            }
             const isActive = activeItem === item.url;
             return (
               <SidebarMenuItem key={item.name}>

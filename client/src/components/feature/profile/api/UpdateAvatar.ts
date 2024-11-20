@@ -1,4 +1,4 @@
-import axiosInstance from "@/api/axiosInstance";
+import axiosInstance from "@/axios/axiosInstance";
 import { restEndpoints } from "@/data/endpoints";
 
 const updateAvatarRequest = async (
@@ -8,7 +8,7 @@ const updateAvatarRequest = async (
     const endpoint = restEndpoints.uploadAvatar.endpoint;
     const response = await axiosInstance.post(endpoint, data);
 
-    if (response.status === 200) {
+    if (response && response.status === 200) {
       return {
         status: true,
         updatedUser: response.data.data,

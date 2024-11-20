@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { selectCurrentUser, updateAvatar } from "@/redux/slices/authSlice";
 import fallbackBanner from "@/assets/banner-fallback.jpg";
 import { Eye, Mail, Pencil, User } from "lucide-react";
-import handleSubscribedTo from "../../../api/user/handleSubscribedTo";
+import handleSubscribedTo from "./api/handleSubscribedTo";
 import { handleBadges } from "./components/handleBadges";
 import {
   ContextMenu,
@@ -18,19 +18,17 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { FileUpload } from "@/components/ui/file-upload";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import updateAvatarRequest from "@/api/user/UpdateAvatar";
+import updateAvatarRequest from "./api/UpdateAvatar";
 import toast from "react-hot-toast";
 
 const ProfilePage = () => {
-  const [fileState, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const user = useSelector(selectCurrentUser);
   const [isBlogger] = useState(user.role === "blogger");
   const [hasSubscribed, subscriberToBloggers] = handleSubscribedTo(
@@ -46,53 +44,27 @@ const ProfilePage = () => {
   );
   const dispatch = useDispatch();
 
-  const handleFileChange = (event: any) => {
-    const target = event.target as HTMLInputElement & {
-      files: FileList;
-    };
+  const handleFileChange = (newFiles: File[]) => {
+    console.log(newFiles);
+    setFiles(newFiles);
+  };
 
-    if (!target.files || target.files.length !== 1) {
-      setFile(null);
-      console.log("no file");
+  const handleUploadAvatar = async () => {
+    if (!files[0]) {
+      toast.error("Please select a file to upload.");
       return;
     }
+    const formData = new FormData();
+    formData.append("avatar", files[0]);
 
-    setFile(target.files[0]);
-
-    const file = new FileReader();
-    file.onload = () => {
-      setAvatar(file.result);
-    };
-
-    console.log(file.result);
-
-    file.readAsDataURL(target.files[0]);
-
-    handleAvatarUpload();
-  };
-
-  const handleAvatarUpload = async () => {
-    try {
-      const data = new FormData();
-      data.append("avatar", fileState as any);
-
-      const response = await updateAvatarRequest(data);
-      if (response.status && response.updatedUser) {
-        setAvatar(response.updatedUser.avatar);
-        toast.success("Avatar updated successfully");
-        dispatch(updateAvatar(response.updatedUser.avatar));
-      } else {
-        toast.error("Error while uploading avatar");
-        console.error(response.error);
-      }
-    } catch (error) {
-      toast.error("An unexpected error occurred while uploading avatar");
-      console.error(error);
+    const result = await updateAvatarRequest(formData);
+    if (!result.status) {
+      toast.error("Error uploading avatar, request failed");
+      return;
     }
-  };
-
-  const updateReduxAvatar = async (avatar: string) => {
-    dispatch(updateAvatar(avatar));
+    dispatch(updateAvatar(result.updatedUser.avatar));
+    setAvatarModalOpen(false);
+    toast.success("Avatar updated successfully");
   };
 
   return (
@@ -150,42 +122,31 @@ const ProfilePage = () => {
                   <DialogTitle>{avatarModalActionType} Avatar</DialogTitle>
                   <DialogDescription>{""}</DialogDescription>
                 </DialogHeader>
-                <div className="content">
-                  <div className="left grid place-items-center gap-4">
-                    <AvatarViewModalDiv
-                      src={avatar as string | null}
-                      alt={user.username}
-                      fallback={
-                        <img src={avatar as string} alt={user.username} />
-                      }
-                    />
-                    {avatarModalActionType === "edit" && (
-                      <DialogFooter className="grid grid-cols-2 gap-2">
+                <div className="content grid place-items-center">
+                  {avatarModalActionType === "edit" ? (
+                    <div className="p-2 flex flex-col gap-4">
+                      <FileUpload onChange={handleFileChange} />
+                      <div className="uploadButton">
                         <Button
-                          type="submit"
-                          onClick={() => {
-                            updateReduxAvatar(avatar as string);
-                          }}
+                          variant="default"
+                          onClick={handleUploadAvatar}
+                          className="w-full"
                         >
-                          Save
+                          Upload
                         </Button>
-                        <Button type="button">New</Button>
-                      </DialogFooter>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <div className="file-input-control">
-                      <Label htmlFor="file">File</Label>
-                      <Input
-                        id="file"
-                        type="file"
-                        placeholder="File"
-                        accept="image/*"
-                        onChange={handleFileChange}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="">
+                      <AvatarViewModalDiv
+                        src={avatar as string | null}
+                        alt={user.username}
+                        fallback={
+                          <img src={avatar as string} alt={user.username} />
+                        }
                       />
                     </div>
-                    <Button>Upload</Button>
-                  </div>
+                  )}
                 </div>
               </DialogContent>
             </Dialog>
