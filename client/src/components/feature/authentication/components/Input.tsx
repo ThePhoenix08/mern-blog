@@ -66,7 +66,7 @@ const FormInputControl = ({
 }: {
   label: string;
   id: string;
-  helperText: string;
+  helperText?: string;
   type?: string;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }): JSX.Element => {

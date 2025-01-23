@@ -39,7 +39,7 @@ const ProfilePage = () => {
   const [avatarModalActionType, setAvatarModalActionType] = useState<
     "view" | "edit"
   >("view");
-  const [avatar, setAvatar] = useState<string | null | ArrayBuffer>(
+  const [avatar] = useState<string | null | ArrayBuffer>(
     user.avatar || "https://avatar.iran.liara.run/public/boy"
   );
   const dispatch = useDispatch();
